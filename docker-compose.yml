@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: bidlogix-postgres
+    container_name: be-postgres
     restart: always
     environment:
-      POSTGRES_DB: ${DB_NAME:-bidlogix_db}
+      POSTGRES_DB: ${DB_NAME:-backend_db}
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
     ports:
@@ -14,14 +12,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-bidlogix_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-backend_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: bidlogix-redis
+    container_name: be-redis
     restart: always
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password_123}
     ports:
@@ -33,9 +31,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: be-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-pgadmin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "${PGADMIN_PORT:-5051}:80"
+    volumes:
+      - pgadmindata:/var/lib/pgadmin
+      
 volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  pgadmindata:
     driver: local

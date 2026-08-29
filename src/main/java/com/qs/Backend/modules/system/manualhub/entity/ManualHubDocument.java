@@ -1,0 +1,75 @@
+package com.qs.Backend.modules.system.manualhub.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = "manualhub_documents")
+@Getter
+@Setter
+public class ManualHubDocument {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "parent_id")
+    private Long parentId;
+
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
+
+    @Column(nullable = false)
+    private String title;
+
+    private String description;
+
+    @Column(name = "document_type")
+    private String documentType;
+
+    private String format;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String content;
+
+    @Column(nullable = false)
+    private String status = "draft";
+
+    @Column(nullable = false)
+    private String language = "vi";
+
+    @Column(nullable = false)
+    private String version = "1";
+
+    @Column(name = "author_id")
+    private Long authorId;
+
+    @Column(name = "author_name")
+    private String authorName;
+
+    @Column(name = "is_current", nullable = false)
+    private boolean isCurrent = true;
+
+    @Column(name = "file_count", nullable = false)
+    private int fileCount = 0;
+
+    @Column(name = "submitted_at")
+    private Instant submittedAt;
+
+    @Column(name = "released_at")
+    private Instant releasedAt;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+}

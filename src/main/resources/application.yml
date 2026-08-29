@@ -1,5 +1,12 @@
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${PREFIX_API:/api/v1}
+
+management:
+  health:
+    mail:
+      enabled: false
 
 spring:
   threads:
@@ -7,12 +14,12 @@ spring:
       enabled: true
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bidlogix_db}?sslmode=prefer
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:backend_db}?sslmode=prefer
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
     hikari:
-      pool-name: BidLogix-HikariPool
+      pool-name: Backend-HikariPool
       maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
       minimum-idle: ${DB_POOL_MIN_IDLE:5}
       connection-timeout: 20000
@@ -34,9 +41,46 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
 
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-secret-to-a-long-random-string-in-env-min-32-chars}
+    access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
+    refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
   storage:
     upload-dir: ${STORAGE_UPLOAD_DIR:uploads}
   redis:
     address: redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}
     password: ${REDIS_PASSWORD:}
+
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:no-reply@example.com}
+
+  notification:
+    zalo:
+      enabled: ${ZALO_ENABLED:false}
+      access-token: ${ZALO_ACCESS_TOKEN:}
+      template-id: ${ZALO_TEMPLATE_ID:}
+      api-url: ${ZALO_API_URL:https://business.openapi.zalo.me/message/template}
+    whatsapp:
+      enabled: ${WHATSAPP_ENABLED:false}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      template-name: ${WHATSAPP_TEMPLATE_NAME:}
+      template-lang: ${WHATSAPP_TEMPLATE_LANG:vi}
+      api-url: ${WHATSAPP_API_URL:https://graph.facebook.com/v19.0}

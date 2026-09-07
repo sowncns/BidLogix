@@ -5,32 +5,60 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
+
 
 @Entity
-@Table(name = "customers")
 @Getter
 @Setter
+@Table(name = "customers")
 public class Customer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
+
+    private String organizationId;
 
     @Column(nullable = false, unique = true)
     private String code;
 
     @Column(nullable = false)
-    private String name;
+    private String fullName;
 
     private String email;
-
     private String phone;
 
-    @Column(nullable = false)
-    private boolean active = true;
+    private String companyName;
+    private String source;
+    private String statusId;
+    private String customerType = "official";
+    private String sourceCampaignId;
+    private String notes;
+
+    private String assignedSalesId;
+    private String createdBy;
+    private String mainPhone;
+    private String mainEmail;
+    private String website;
+    private String address;
+
+    private String gender;
+    private String region;
+
+    @ElementCollection
+    private List<String> groupIds;
+
+    @ElementCollection
+    private List<String> businessFieldIds;
+
+    private Instant lastContactAt;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
-    private Instant updatedAt;
+    @Column(nullable = false)
+    private Instant updatedAt = Instant.now();
+
+    private Instant deletedAt; // null = chưa xóa, khác null = đã soft-delete
 }

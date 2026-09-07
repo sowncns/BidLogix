@@ -93,6 +93,9 @@ public class CampaignService {
         customerRequest.setEmail(request.getEmail());
         customerRequest.setGender(request.getGender());
         customerRequest.setSource(campaign.getName());
+        customerRequest.setCustomerType("course".equals(campaign.getFunnelType()) ? "student" : "lead");
+        customerRequest.setSourceCampaignId(campaign.getId());
+        customerRequest.setNotes(request.getNotes());
         if (request.getBusinessFieldId() != null && !request.getBusinessFieldId().isBlank()) {
             customerRequest.setBusinessFieldIds(List.of(request.getBusinessFieldId().trim()));
         }

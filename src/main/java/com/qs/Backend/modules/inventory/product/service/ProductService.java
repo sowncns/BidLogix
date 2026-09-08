@@ -1,35 +1,48 @@
 package com.qs.Backend.modules.inventory.product.service;
 
 import com.qs.Backend.modules.inventory.product.dto.ProductCreateRequest;
+import com.qs.Backend.modules.inventory.product.dto.ProductListResponse;
 import com.qs.Backend.modules.inventory.product.dto.ProductResponse;
 import com.qs.Backend.modules.inventory.product.dto.ProductUpdateRequest;
 import com.qs.Backend.modules.inventory.product.entity.Product;
 import com.qs.Backend.modules.inventory.product.repository.ProductRepository;
 import com.qs.Backend.shared.exception.AppException;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 @Service
 @RequiredArgsConstructor
 public class ProductService {
-
+    private static final int DEFAULT_WARRANTY_MONTHS = 24;
     private final ProductRepository productRepository;
 
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
-        if (productRepository.existsBySku(request.getSku())) {
-            throw new AppException("Product SKU already exists", HttpStatus.CONFLICT, "INVENTORY_PRODUCT_SKU_EXISTS");
+        String code = normalizeRequired(request.getCode(), "code is required");
+        if (productRepository.existsByCodeAndDeletedAtIsNull(code)) {
+            throw new AppException("Product code already exists", HttpStatus.CONFLICT, "INVENTORY_PRODUCT_CODE_EXISTS");
         }
         Product product = new Product();
-        product.setSku(request.getSku());
-        product.setName(request.getName());
-        product.setPrice(request.getPrice());
+        product.setCode(code);
+        product.setSku(code);
+        product.setName(normalizeRequired(request.getName(), "name is required"));
+        product.setPrice(BigDecimal.ZERO);
+        product.setSpecifications(request.getSpecifications() == null ? new LinkedHashMap<>() : request.getSpecifications());
+        product.setWarrantyMonths(request.getWarrantyMonths() == null || request.getWarrantyMonths() <= 0 ? DEFAULT_WARRANTY_MONTHS : request.getWarrantyMonths());
+        Instant now = Instant.now();
+        product.setCreatedAt(now);
+        product.setUpdatedAt(now);
         return toResponse(productRepository.save(product));
     }
 
@@ -39,56 +52,58 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductResponse> listProducts(Pageable pageable) {
-        return productRepository.findByActiveTrue(pageable).map(this::toResponse);
+    public ProductListResponse listProducts(String search, int limit, int offset) {
+        int safeLimit = Math.min(Math.max(limit, 1), 200);
+        int safeOffset = Math.max(offset, 0);
+        var page = productRepository.findAll(spec(search), PageRequest.of(safeOffset / safeLimit, safeLimit, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return ProductListResponse.builder().items(page.getContent().stream().map(this::toResponse).toList()).limit(safeLimit).offset(safeOffset).total(page.getTotalElements()).build();
     }
 
     @Transactional
     public ProductResponse updateProduct(Long id, ProductUpdateRequest request) {
         Product product = findActiveOrThrow(id);
-        product.setName(request.getName());
-        product.setPrice(request.getPrice());
+        if (request.getName() != null) product.setName(normalizeRequired(request.getName(), "name is required"));
+        if (request.getSpecifications() != null) product.setSpecifications(request.getSpecifications());
+        if (request.getWarrantyMonths() != null) product.setWarrantyMonths(request.getWarrantyMonths() <= 0 ? DEFAULT_WARRANTY_MONTHS : request.getWarrantyMonths());
         product.setUpdatedAt(Instant.now());
         return toResponse(product);
     }
 
     @Transactional
     public ProductResponse adjustStock(Long id, int delta) {
-        Product product = findActiveOrThrow(id);
-        int newQuantity = product.getStockQuantity() + delta;
-        if (newQuantity < 0) {
-            throw new AppException("Stock quantity cannot go negative", HttpStatus.CONFLICT, "INVENTORY_STOCK_NEGATIVE");
-        }
-        product.setStockQuantity(newQuantity);
-        product.setUpdatedAt(Instant.now());
-        return toResponse(product);
+        return getProduct(id);
     }
 
     @Transactional
     public void deactivateProduct(Long id) {
         Product product = findActiveOrThrow(id);
         product.setActive(false);
+        product.setDeletedAt(Instant.now());
         product.setUpdatedAt(Instant.now());
     }
 
+    private Specification<Product> spec(String search) {
+        return (root, query, cb) -> {
+            var predicates = new ArrayList<Predicate>();
+            predicates.add(cb.isNull(root.get("deletedAt")));
+            if (search != null && !search.isBlank()) {
+                String pattern = "%" + search.trim().toLowerCase() + "%";
+                predicates.add(cb.or(cb.like(cb.lower(root.get("code")), pattern), cb.like(cb.lower(root.get("name")), pattern)));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
+    }
+
     private Product findActiveOrThrow(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new AppException("Product not found", HttpStatus.NOT_FOUND, "INVENTORY_PRODUCT_NOT_FOUND"));
-        if (!product.isActive()) {
-            throw new AppException("Product not found", HttpStatus.NOT_FOUND, "INVENTORY_PRODUCT_NOT_FOUND");
-        }
-        return product;
+        return productRepository.findById(id).filter(p -> p.getDeletedAt() == null).orElseThrow(() -> new AppException("Product not found", HttpStatus.NOT_FOUND, "INVENTORY_PRODUCT_NOT_FOUND"));
     }
 
     private ProductResponse toResponse(Product product) {
-        return ProductResponse.builder()
-                .id(product.getId())
-                .sku(product.getSku())
-                .name(product.getName())
-                .price(product.getPrice())
-                .stockQuantity(product.getStockQuantity())
-                .active(product.isActive())
-                .createdAt(product.getCreatedAt())
-                .build();
+        return ProductResponse.builder().id(product.getId()).code(product.getCode()).name(product.getName()).specifications(product.getSpecifications()).warrantyMonths(product.getWarrantyMonths()).createdAt(product.getCreatedAt()).updatedAt(product.getUpdatedAt()).deletedAt(product.getDeletedAt()).build();
+    }
+
+    private String normalizeRequired(String value, String message) {
+        if (value == null || value.isBlank()) throw new AppException(message, HttpStatus.BAD_REQUEST, "INVENTORY_PRODUCT_INVALID_REQUEST");
+        return value.trim();
     }
 }

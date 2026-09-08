@@ -3,9 +3,13 @@ package com.qs.Backend.modules.inventory.product.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Entity
 @Table(name = "products")
@@ -20,11 +24,21 @@ public class Product {
     @Column(nullable = false, unique = true)
     private String sku;
 
+    @Column(nullable = false, unique = true, length = 50)
+    private String code;
+
     @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private BigDecimal price = BigDecimal.ZERO;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> specifications = new LinkedHashMap<>();
+
+    @Column(nullable = false)
+    private Integer warrantyMonths = 24;
 
     @Column(nullable = false)
     private Integer stockQuantity = 0;
@@ -36,4 +50,6 @@ public class Product {
     private Instant createdAt = Instant.now();
 
     private Instant updatedAt;
+
+    private Instant deletedAt;
 }

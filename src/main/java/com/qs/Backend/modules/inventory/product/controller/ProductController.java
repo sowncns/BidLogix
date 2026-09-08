@@ -1,6 +1,7 @@
 package com.qs.Backend.modules.inventory.product.controller;
 
 import com.qs.Backend.modules.inventory.product.dto.ProductCreateRequest;
+import com.qs.Backend.modules.inventory.product.dto.ProductListResponse;
 import com.qs.Backend.modules.inventory.product.dto.ProductResponse;
 import com.qs.Backend.modules.inventory.product.dto.ProductUpdateRequest;
 import com.qs.Backend.modules.inventory.product.dto.StockAdjustRequest;
@@ -8,12 +9,10 @@ import com.qs.Backend.modules.inventory.product.service.ProductService;
 import com.qs.Backend.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/products")
+@RequestMapping("/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -30,11 +29,13 @@ public class ProductController {
     }
 
     @GetMapping
-    public ApiResponse<Page<ProductResponse>> list(Pageable pageable) {
-        return ApiResponse.ok(productService.listProducts(pageable), null);
+    public ApiResponse<ProductListResponse> list(@RequestParam(required = false) String search,
+                                                 @RequestParam(defaultValue = "50") int limit,
+                                                 @RequestParam(defaultValue = "0") int offset) {
+        return ApiResponse.ok(productService.listProducts(search, limit, offset), null);
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ApiResponse<ProductResponse> update(@PathVariable Long id, @Valid @RequestBody ProductUpdateRequest request) {
         return ApiResponse.ok(productService.updateProduct(id, request), "Product updated");
     }

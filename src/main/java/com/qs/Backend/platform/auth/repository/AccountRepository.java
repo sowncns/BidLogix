@@ -2,12 +2,13 @@ package com.qs.Backend.platform.auth.repository;
 
 import com.qs.Backend.platform.auth.entity.AuthUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface AccountRepository extends JpaRepository<AuthUser, Long> {
+public interface AccountRepository extends JpaRepository<AuthUser, Long>, JpaSpecificationExecutor<AuthUser> {
 
     Optional<AuthUser> findByUsername(String username);
 

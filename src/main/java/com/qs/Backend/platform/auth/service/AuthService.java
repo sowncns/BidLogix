@@ -15,9 +15,11 @@ import com.qs.Backend.platform.auth.repository.SessionRepository;
 import com.qs.Backend.platform.auth.security.AccountPrincipal;
 import com.qs.Backend.platform.auth.security.JwtService;
 import com.qs.Backend.platform.auth.security.TokenHasher;
+import com.qs.Backend.platform.logging.audit.service.AuditLogService;
 import com.qs.Backend.platform.permission.dto.UserPermissionInfo;
 import com.qs.Backend.platform.permission.service.PermissionService;
 import com.qs.Backend.platform.verification.service.VerificationService;
+import com.qs.Backend.platform.auth.service.AuthInterface;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +40,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements AuthInterface {
 
     private static final String CUSTOMER_ROLE = "CUSTOMER";
     private static final long SESSION_TTL_MS = 30L * 24 * 60 * 60 * 1000;
@@ -57,12 +59,14 @@ public class AuthService {
     private final PermissionService permissionService;
     private final VerificationService verificationService;
     private final EmailService emailService;
+    private final AuditLogService auditLogService;
     private final SecureRandom random = new SecureRandom();
 
     // ---- Registration (internal/staff) ----
-
+    @Override
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
+
         if (accountRepository.existsByUsername(request.getUsername())) {
             throw new AppException("Username đã tồn tại", HttpStatus.CONFLICT, "USERNAME_TAKEN");
         }
@@ -79,6 +83,8 @@ public class AuthService {
         account.setActive(true);
         accountRepository.save(account);
 
+        auditLogService.log(account.getId(), account.getUsername(), "REGISTER", "AuthUser", String.valueOf(account.getId()), null);
+
         // No auto-login: the caller must call /auth/login separately with the credentials just set.
         return new RegisterResponse(account.getId(), account.getUsername(), account.getEmail());
     }
@@ -91,19 +97,25 @@ public class AuthService {
     }
 
     // ---- Login / session lifecycle ----
-
+    @Override 
     @Transactional
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         AuthUser account = accountRepository.findActiveByUsernameOrEmailOrPhone(request.getUsername())
-                .orElseThrow(() -> new AppException("Sai tài khoản hoặc mật khẩu", HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS"));
+                .orElseGet(() -> {
+                    auditLogService.log(null, request.getUsername(), "LOGIN_FAILED", "AuthUser", null, "account not found or inactive");
+                    throw new AppException("Sai tài khoản hoặc mật khẩu", HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
+            auditLogService.log(account.getId(), account.getUsername(), "LOGIN_FAILED", "AuthUser", String.valueOf(account.getId()), "wrong password");
             throw new AppException("Sai tài khoản hoặc mật khẩu", HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
         }
 
+        auditLogService.log(account.getId(), account.getUsername(), "LOGIN", "AuthUser", String.valueOf(account.getId()), null);
         return toLoginResponse(issueTokens(account, httpRequest));
     }
 
+    @Override 
     @Transactional
     public TokenResponse refresh(String refreshToken) {
         String username = jwtService.extractUsername(refreshToken);
@@ -125,6 +137,7 @@ public class AuthService {
         return issueTokens(session.getAccount(), null);
     }
 
+    @Override 
     @Transactional
     public void logout(String accessToken) {
         String jti = jwtService.extractJti(accessToken);
@@ -132,11 +145,14 @@ public class AuthService {
         sessionRepository.findByAccessTokenJti(jti).ifPresent(session -> {
             session.setRevokedAt(Instant.now());
             sessionRepository.save(session);
+
+            AuthUser account = session.getAccount();
+            auditLogService.log(account.getId(), account.getUsername(), "LOGOUT", "AuthUser", String.valueOf(account.getId()), null);
         });
     }
 
     // ---- Password management ----
-
+    @Override
     @Transactional
     public void changePassword(Long accountId, ChangePasswordRequest request) {
         passwordPolicy.validate(request.getNewPassword(), request.getConfirmPassword());
@@ -154,8 +170,11 @@ public class AuthService {
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
         sessionRepository.revokeAllForAccount(accountId, Instant.now());
+
+        auditLogService.log(account.getId(), account.getUsername(), "CHANGE_PASSWORD", "AuthUser", String.valueOf(account.getId()), null);
     }
 
+    @Override 
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         // Anti-enumeration: caller always returns the same success message regardless of outcome here.
@@ -170,9 +189,12 @@ public class AuthService {
 
             String locale = LocaleResolver.fromRegion(account.getRegion());
             emailService.sendPasswordResetEmail(locale, account.getEmail(), rawToken);
+
+            auditLogService.log(account.getId(), account.getUsername(), "FORGOT_PASSWORD_REQUESTED", "AuthUser", String.valueOf(account.getId()), null);
         });
     }
 
+    @Override 
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         passwordPolicy.validate(request.getNewPassword(), request.getConfirmPassword());
@@ -195,10 +217,12 @@ public class AuthService {
         passwordResetTokenRepository.save(resetToken);
 
         sessionRepository.revokeAllForAccount(account.getId(), Instant.now());
+
+        auditLogService.log(account.getId(), account.getUsername(), "RESET_PASSWORD", "AuthUser", String.valueOf(account.getId()), null);
     }
 
     // ---- SSO ticket handoff ----
-
+    @Override 
     @Transactional
     public SSOTicketResponse issueSsoTicket(Long accountId) {
         AuthUser account = accountRepository.findById(accountId)
@@ -213,18 +237,26 @@ public class AuthService {
         ticket.setExpiresAt(Instant.now().plusSeconds(SSO_TICKET_TTL_SECONDS));
         ssoTicketRepository.save(ticket);
 
+        auditLogService.log(account.getId(), account.getUsername(), "SSO_TICKET_ISSUED", "AuthUser", String.valueOf(account.getId()), null);
+
         return new SSOTicketResponse(rawTicket, SSO_TICKET_TTL_SECONDS);
     }
 
+    @Override 
     @Transactional
     public LoginResponse loginWithSsoTicket(String rawTicket, HttpServletRequest httpRequest) {
         SSOTicket ticket = ssoTicketRepository.findByTokenHash(TokenHasher.sha256(rawTicket))
-                .orElseThrow(() -> new AppException("SSO ticket không hợp lệ", HttpStatus.UNAUTHORIZED, "SSO_TICKET_INVALID"));
+                .orElseThrow(() -> {
+                    auditLogService.log(null, null, "SSO_LOGIN_FAILED", "SSOTicket", null, "ticket not found");
+                    return new AppException("SSO ticket không hợp lệ", HttpStatus.UNAUTHORIZED, "SSO_TICKET_INVALID");
+                });
 
         if (ticket.isUsed()) {
+            auditLogService.log(ticket.getAccount().getId(), ticket.getAccount().getUsername(), "SSO_LOGIN_FAILED", "SSOTicket", null, "ticket already used");
             throw new AppException("SSO ticket đã được sử dụng", HttpStatus.UNAUTHORIZED, "SSO_TICKET_USED");
         }
         if (ticket.isExpired()) {
+            auditLogService.log(ticket.getAccount().getId(), ticket.getAccount().getUsername(), "SSO_LOGIN_FAILED", "SSOTicket", null, "ticket expired");
             throw new AppException("SSO ticket đã hết hạn", HttpStatus.UNAUTHORIZED, "SSO_TICKET_EXPIRED");
         }
 
@@ -234,14 +266,16 @@ public class AuthService {
 
         AuthUser account = ticket.getAccount();
         if (!account.isActive()) {
+            auditLogService.log(account.getId(), account.getUsername(), "SSO_LOGIN_FAILED", "AuthUser", String.valueOf(account.getId()), "account inactive");
             throw new AppException("Tài khoản đã bị khóa", HttpStatus.FORBIDDEN, "USER_INACTIVE");
         }
 
+        auditLogService.log(account.getId(), account.getUsername(), "SSO_LOGIN", "AuthUser", String.valueOf(account.getId()), null);
         return toLoginResponse(issueTokens(account, httpRequest));
     }
 
     // ---- Customer self-registration + contact verification ----
-
+    @Override
     @Transactional
     public String registerCustomer(CustomerRegisterRequest request) {
         passwordPolicy.validate(request.getPassword(), request.getPassword());
@@ -265,6 +299,8 @@ public class AuthService {
         account.setActive(false); // activated once email is verified
         accountRepository.save(account);
 
+        auditLogService.log(account.getId(), account.getUsername(), "CUSTOMER_REGISTER", "AuthUser", String.valueOf(account.getId()), null);
+
         String code = verificationService.generateCode(request.getEmail(), REGISTRATION_PURPOSE, account.getId());
         String locale = LocaleResolver.fromRegion(account.getRegion());
         emailService.sendVerificationEmail(locale, account.getEmail(), code, VerificationService.EXPIRY_MINUTES);
@@ -272,6 +308,7 @@ public class AuthService {
         return code; // returned so the controller can fan the same code out to phone channels
     }
 
+    @Override 
     @Transactional
     public LoginResponse verifyContact(VerifyContactRequest request, HttpServletRequest httpRequest) {
         verificationService.verifyCode(request.getEmail(), REGISTRATION_PURPOSE, request.getCode());
@@ -283,21 +320,26 @@ public class AuthService {
         account.setActive(true);
         accountRepository.save(account);
 
+        auditLogService.log(account.getId(), account.getUsername(), "VERIFY_CONTACT", "AuthUser", String.valueOf(account.getId()), null);
+
         return toLoginResponse(issueTokens(account, httpRequest));
     }
 
+    @Override
     @Transactional
     public void resendVerificationCode(ResendVerificationRequest request) {
         accountRepository.findAnyStatusByUsernameOrEmailOrPhone(request.getEmail()).ifPresent(account -> {
             String code = verificationService.generateCode(request.getEmail(), REGISTRATION_PURPOSE, account.getId());
             String locale = LocaleResolver.fromRegion(account.getRegion());
             emailService.sendVerificationEmail(locale, account.getEmail(), code, VerificationService.EXPIRY_MINUTES);
+
+            auditLogService.log(account.getId(), account.getUsername(), "RESEND_VERIFICATION", "AuthUser", String.valueOf(account.getId()), null);
         });
         // Silently no-op when not found - avoids leaking which emails are registered.
     }
 
     // ---- Current-user / permissions ----
-
+    @Override 
     public UserResponse getUserWithPermissions(Long accountId) {
         AuthUser account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AppException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
@@ -318,7 +360,7 @@ public class AuthService {
     }
 
     // ---- Internal helpers ----
-
+    
     private TokenResponse issueTokens(AuthUser account, HttpServletRequest httpRequest) {
         AccountPrincipal principal = new AccountPrincipal(account);
         List<String> authorities = principal.getAuthorities().stream()

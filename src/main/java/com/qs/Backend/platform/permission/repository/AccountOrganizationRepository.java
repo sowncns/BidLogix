@@ -7,4 +7,8 @@ import java.util.List;
 
 public interface AccountOrganizationRepository extends JpaRepository<AccountOrganization, Long> {
     List<AccountOrganization> findByAccountId(Long accountId);
+
+    void deleteByAccountId(Long accountId);
+
+    boolean existsByAccountIdAndOrganizationId(Long accountId, Long organizationId);
 }

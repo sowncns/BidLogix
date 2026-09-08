@@ -23,28 +23,28 @@ public class RoleController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<RoleResponse> get(@PathVariable Long id) {
+    public ApiResponse<RoleResponse> get(@PathVariable java.util.UUID id) {
         return ApiResponse.ok(roleAdminService.get(id), null);
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<RoleResponse> update(@PathVariable Long id, @RequestBody RoleUpdateRequest request) {
+    public ApiResponse<RoleResponse> update(@PathVariable java.util.UUID id, @RequestBody RoleUpdateRequest request) {
         return ApiResponse.ok(roleAdminService.update(id, request), "Role updated");
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable java.util.UUID id) {
         roleAdminService.delete(id);
         return ApiResponse.ok(null, "Role deleted");
     }
 
     @PostMapping("/{id}/permissions")
-    public ApiResponse<RoleResponse> assignPermission(@PathVariable Long id, @RequestBody AssignPermissionRequest request) {
+    public ApiResponse<RoleResponse> assignPermission(@PathVariable java.util.UUID id, @RequestBody AssignPermissionRequest request) {
         return ApiResponse.ok(roleAdminService.assignPermission(id, request), "Permission assigned");
     }
 
     @DeleteMapping("/{id}/permissions/{permissionCode}")
-    public ApiResponse<RoleResponse> revokePermission(@PathVariable Long id, @PathVariable String permissionCode) {
+    public ApiResponse<RoleResponse> revokePermission(@PathVariable java.util.UUID id, @PathVariable String permissionCode) {
         return ApiResponse.ok(roleAdminService.revokePermission(id, permissionCode), "Permission revoked");
     }
 }

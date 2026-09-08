@@ -18,6 +18,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 public class ProfileController {
@@ -48,25 +50,25 @@ public class ProfileController {
     }
 
     @GetMapping("/users/{id}/profile")
-    public ApiResponse<ProfileResponse> getUserProfile(@PathVariable Long id) {
+    public ApiResponse<ProfileResponse> getUserProfile(@PathVariable UUID id) {
         return ApiResponse.ok(profileService.getByUserId(id), null);
     }
 
     @PatchMapping("/users/{id}/profile")
-    public ApiResponse<ProfileResponse> updateUserProfile(@PathVariable Long id,
+    public ApiResponse<ProfileResponse> updateUserProfile(@PathVariable UUID id,
                                                           @RequestBody ProfileUpdateRequest request) {
         return ApiResponse.ok(profileService.updateByUserId(id, request), "Profile updated");
     }
 
     @PostMapping("/users/{id}/avatar")
-    public ApiResponse<ProfileResponse> uploadUserAvatar(@PathVariable Long id,
+    public ApiResponse<ProfileResponse> uploadUserAvatar(@PathVariable UUID id,
                                                          @AuthenticationPrincipal AccountPrincipal principal,
                                                          @RequestParam("file") MultipartFile file) {
         return ApiResponse.ok(profileService.uploadAvatar(id, file, principal.getId()), "Avatar uploaded");
     }
 
     @GetMapping("/users/{id}/avatar/{fileId}")
-    public ResponseEntity<Resource> downloadUserAvatar(@PathVariable Long id, @PathVariable String fileId) {
+    public ResponseEntity<Resource> downloadUserAvatar(@PathVariable UUID id, @PathVariable String fileId) {
         StoredFile storedFile = profileService.findAvatarFile(id, fileId);
         MediaType mediaType = storedFile.getMimeType() != null
                 ? MediaType.parseMediaType(storedFile.getMimeType())

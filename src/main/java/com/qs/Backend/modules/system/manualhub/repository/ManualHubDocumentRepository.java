@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface ManualHubDocumentRepository extends JpaRepository<ManualHubDocument, Long> {
 
@@ -26,9 +27,9 @@ public interface ManualHubDocumentRepository extends JpaRepository<ManualHubDocu
     Page<ManualHubDocument> search(
             @Param("keyword") String keyword,
             @Param("status") String status,
-            @Param("productId") Long productId,
+            @Param("productId") UUID productId,
             @Param("parentId") Long parentId,
-            @Param("authorId") Long authorId,
+            @Param("authorId") UUID authorId,
             Pageable pageable);
 
     List<ManualHubDocument> findByParentIdAndIsCurrentTrue(Long parentId);

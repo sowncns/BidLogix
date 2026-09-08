@@ -79,6 +79,17 @@ public class ManualHubFileService {
         return record;
     }
 
+    @Transactional
+    public ManualHubFile storeBytes(Long documentId, byte[] bytes, String originalFileName, String contentType) {
+        String storageKey = fileStorageService.storeBytes(bytes, originalFileName, "manualhub/" + documentId);
+        ManualHubFile record = saveFileRecord(documentId, storageKey, originalFileName, contentType, (long) bytes.length);
+        documentRepository.findById(documentId).ifPresent(document -> {
+            document.setFileCount(document.getFileCount() + 1);
+            document.setUpdatedAt(Instant.now());
+        });
+        return record;
+    }
+
     /** Generates a blank .docx and stores it as the document's first file, so
      *  a freshly-created document already has a real, server-fetchable
      *  fileUrl and opens straight in OnlyOffice — instead of falling back to

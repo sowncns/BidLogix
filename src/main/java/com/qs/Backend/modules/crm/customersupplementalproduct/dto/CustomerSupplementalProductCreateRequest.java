@@ -5,12 +5,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class CustomerSupplementalProductCreateRequest {
     @JsonProperty("product_id")
-    private Long productId;
+    private UUID productId;
     @JsonProperty("product_code")
     private String productCode;
     @JsonProperty("product_name")

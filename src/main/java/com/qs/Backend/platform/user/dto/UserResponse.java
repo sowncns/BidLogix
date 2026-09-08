@@ -5,11 +5,12 @@ import lombok.Getter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class UserResponse {
-    private Long id;
+    private UUID id;
     private String email;
     private String phone;
     private String firstName;
@@ -17,7 +18,7 @@ public class UserResponse {
     private String fullName;
     private String avatarUrl;
     private String region;
-    private Long organizationId;
+    private UUID organizationId;
     private List<RoleInfo> roles;
     private List<PermissionInfo> permissions;
     private EmailNotificationPrefsResponse emailNotifications;

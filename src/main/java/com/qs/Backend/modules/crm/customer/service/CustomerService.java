@@ -3,7 +3,9 @@ package com.qs.Backend.modules.crm.customer.service;
 import com.qs.Backend.modules.crm.customer.dto.CustomerCreateRequest;
 import com.qs.Backend.modules.crm.customer.dto.CustomerFilterParams;
 import com.qs.Backend.modules.crm.customer.dto.CustomerListResponse;
+import com.qs.Backend.modules.crm.customer.dto.CustomerPortalStatusResponse;
 import com.qs.Backend.modules.crm.customer.dto.CustomerResponse;
+import com.qs.Backend.modules.crm.customer.dto.CustomerTrackingStatsResponse;
 import com.qs.Backend.modules.crm.customer.dto.CustomerUpdateRequest;
 import com.qs.Backend.modules.crm.customer.entity.Customer;
 import com.qs.Backend.modules.crm.customer.repository.CustomerRepository;
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,7 +36,7 @@ public class CustomerService {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public CustomerResponse createCustomer(CustomerCreateRequest request, Long performedBy) {
+    public CustomerResponse createCustomer(CustomerCreateRequest request, UUID performedBy) {
         CustomerRequestNormalizer.normalize(request);
 
         if (request.getCode() == null || request.getCode().isEmpty()) {
@@ -94,8 +98,53 @@ public class CustomerService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public CustomerTrackingStatsResponse trackingStats(String organizationId, UUID currentUserId) {
+        CustomerFilterParams filters = new CustomerFilterParams(organizationId, null, null, currentUserId == null ? null : String.valueOf(currentUserId), null, null);
+        long totalAssigned = customerRepository.count(toSpecification(filters));
+        return new CustomerTrackingStatsResponse(totalAssigned, totalAssigned);
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerPortalStatusResponse portalStatus(String id) {
+        Customer customer = findActiveOrThrow(id);
+        return new CustomerPortalStatusResponse(false, customer.getEmail(), customer.getRegion());
+    }
+
     @Transactional
-    public CustomerResponse updateCustomer(String id, CustomerUpdateRequest request, Long performedBy) {
+    public CustomerPortalStatusResponse grantPortal(String id) {
+        Customer customer = findActiveOrThrow(id);
+        if (customer.getEmail() == null || customer.getEmail().isBlank()) {
+            throw new AppException("Customer email is required", HttpStatus.BAD_REQUEST, "CUSTOMER_EMAIL_REQUIRED");
+        }
+        return new CustomerPortalStatusResponse(true, customer.getEmail(), customer.getRegion());
+    }
+
+    @Transactional
+    public CustomerPortalStatusResponse revokePortal(String id) {
+        Customer customer = findActiveOrThrow(id);
+        return new CustomerPortalStatusResponse(false, customer.getEmail(), customer.getRegion());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> resetPortalPassword(String id) {
+        Customer customer = findActiveOrThrow(id);
+        return Map.of("sent", true, "email", customer.getEmail() == null ? "" : customer.getEmail());
+    }
+
+    @Transactional
+    public CustomerResponse merge(String targetId, String sourceId, UUID performedBy) {
+        if (sourceId == null || sourceId.isBlank() || targetId.equals(sourceId)) {
+            throw new AppException("Invalid source customer", HttpStatus.BAD_REQUEST, "CRM_CUSTOMER_INVALID_MERGE_SOURCE");
+        }
+        Customer target = findActiveOrThrow(targetId);
+        deactivateCustomer(sourceId, performedBy);
+        auditLogService.log(performedBy, null, "CUSTOMER_MERGE", "Customer", target.getId(), "{\"source_id\":\"" + sourceId + "\"}");
+        return toResponse(target);
+    }
+
+    @Transactional
+    public CustomerResponse updateCustomer(String id, CustomerUpdateRequest request, UUID performedBy) {
         CustomerRequestNormalizer.normalize(request);
         Customer customer = findActiveOrThrow(id);
 
@@ -132,7 +181,7 @@ public class CustomerService {
     }
 
     @Transactional
-    public void deactivateCustomer(String id, Long performedBy) {
+    public void deactivateCustomer(String id, UUID performedBy) {
         Customer customer = findActiveOrThrow(id);
         customer.setDeletedAt(Instant.now());
         customer.setUpdatedAt(Instant.now());

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/manualhub")
@@ -20,7 +21,7 @@ public class ManualHubDocumentController {
     public ApiResponse<ManualHubDocumentListResponse> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
-            @RequestParam(name = "product_id", required = false) Long productId,
+            @RequestParam(name = "product_id", required = false) UUID productId,
             @RequestParam(name = "parent_id", required = false) Long parentId,
             @RequestParam(required = false, defaultValue = "false") boolean mine,
             @RequestParam(required = false, defaultValue = "20") int limit,

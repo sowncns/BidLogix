@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.util.Map;
 
 @Getter
@@ -18,13 +19,13 @@ public class KeyGenHistoryResponse {
     @JsonProperty("output_data")
     private Map<String, Object> outputData;
     @JsonProperty("generated_by")
-    private Long generatedBy;
+    private UUID generatedBy;
     @JsonProperty("generated_by_name")
     private String generatedByName;
     @JsonProperty("organization_id")
     private String organizationId;
     @JsonProperty("product_item_id")
-    private Long productItemId;
+    private UUID productItemId;
     @JsonProperty("product_item_code")
     private String productItemCode;
     @JsonProperty("created_at")

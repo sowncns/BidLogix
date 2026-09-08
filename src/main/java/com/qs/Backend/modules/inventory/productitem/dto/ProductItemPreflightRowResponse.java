@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 public class ProductItemPreflightRowResponse {
@@ -16,11 +18,11 @@ public class ProductItemPreflightRowResponse {
     private String status;
 
     @JsonProperty("claimed_by_id")
-    private Long claimedById;
+    private UUID claimedById;
 
     @JsonProperty("product_item_id")
-    private Long productItemId;
+    private UUID productItemId;
 
     @JsonProperty("customer_id")
-    private String customerId;
+    private UUID customerId;
 }

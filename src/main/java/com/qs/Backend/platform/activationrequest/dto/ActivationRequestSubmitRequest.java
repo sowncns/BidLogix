@@ -8,14 +8,14 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class ActivationRequestSubmitRequest {
 
-    @NotBlank
     @JsonProperty("customer_id")
-    private String customerId;
+    private UUID customerId;
 
     @JsonProperty("request_type")
     private String requestType;

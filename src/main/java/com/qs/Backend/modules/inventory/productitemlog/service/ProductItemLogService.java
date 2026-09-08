@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class ProductItemLogService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public void log(Long productItemId, String eventType, Long actorId, String source, String customerId, String metadata) {
+    public void log(UUID productItemId, String eventType, UUID actorId, String source, UUID customerId, String metadata) {
         ProductItemLog log = new ProductItemLog();
         log.setProductItemId(productItemId);
         log.setEventType(eventType);
@@ -38,7 +39,7 @@ public class ProductItemLogService {
     }
 
     @Transactional(readOnly = true)
-    public ProductItemLogListResponse list(Long productItemId, int limit, int offset) {
+    public ProductItemLogListResponse list(UUID productItemId, int limit, int offset) {
         int safeLimit = Math.max(1, Math.min(limit, 200));
         int safeOffset = Math.max(0, offset);
         Page<ProductItemLog> page = productItemLogRepository.findByProductItemIdOrderByOccurredAtDesc(

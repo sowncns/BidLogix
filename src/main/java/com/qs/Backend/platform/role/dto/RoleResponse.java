@@ -6,11 +6,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class RoleResponse {
-    private Long id;
+    private UUID id;
     private String code;
     private String name;
     @JsonProperty("data_scope")

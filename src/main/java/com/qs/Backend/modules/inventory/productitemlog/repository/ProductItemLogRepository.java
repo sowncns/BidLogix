@@ -5,7 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProductItemLogRepository extends JpaRepository<ProductItemLog, Long> {
+import java.util.UUID;
 
-    Page<ProductItemLog> findByProductItemIdOrderByOccurredAtDesc(Long productItemId, Pageable pageable);
+public interface ProductItemLogRepository extends JpaRepository<ProductItemLog, UUID> {
+
+    Page<ProductItemLog> findByProductItemIdOrderByOccurredAtDesc(UUID productItemId, Pageable pageable);
 }

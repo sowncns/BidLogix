@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -66,12 +67,12 @@ public class ProductItemService {
     }
 
     @Transactional(readOnly = true)
-    public ProductItemResponse get(Long id) {
+    public ProductItemResponse get(UUID id) {
         return toResponse(findActiveOrThrow(id));
     }
 
     @Transactional(readOnly = true)
-    public ProductItemListResponse list(String status, String customerId, Long productId, String keyword,
+    public ProductItemListResponse list(String status, UUID customerId, UUID productId, String keyword,
                                         Instant createdAtFrom, Instant createdAtTo, int limit, int offset) {
         int safeLimit = Math.max(1, Math.min(limit, 200));
         int safeOffset = Math.max(0, offset);
@@ -86,7 +87,7 @@ public class ProductItemService {
     }
 
     @Transactional
-    public ProductItemResponse update(Long id, ProductItemUpdateRequest request) {
+    public ProductItemResponse update(UUID id, ProductItemUpdateRequest request) {
         ProductItem item = findActiveOrThrow(id);
         boolean changed = false;
         if (request.getStatus() != null) {
@@ -115,19 +116,19 @@ public class ProductItemService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(UUID id) {
         ProductItem item = findActiveOrThrow(id);
         item.setDeletedAt(Instant.now());
         item.setUpdatedAt(Instant.now());
     }
 
     @Transactional
-    public ProductItemResponse activate(Long id, ProductItemActivateRequest request, Long activatedBy) {
+    public ProductItemResponse activate(UUID id, ProductItemActivateRequest request, UUID activatedBy) {
         ProductItem item = findActiveOrThrow(id);
         if (!("stock".equals(item.getStatus()) || "refurbished".equals(item.getStatus())) || item.getCustomerId() != null) {
             throw new AppException("Product item cannot be activated", HttpStatus.CONFLICT, "PRODUCT_ITEM_CANNOT_ACTIVATE");
         }
-        if (!customerRepository.existsById(request.getCustomerId())) {
+        if (!customerRepository.existsById(request.getCustomerId().toString())) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
         }
 
@@ -155,7 +156,7 @@ public class ProductItemService {
     }
 
     @Transactional
-    public void recall(Long id, ProductItemNotesRequest request) {
+    public void recall(UUID id, ProductItemNotesRequest request) {
         ProductItem item = findActiveOrThrow(id);
         if (!"active".equals(item.getStatus())) {
             throw new AppException("Product item cannot be recalled", HttpStatus.CONFLICT, "PRODUCT_ITEM_CANNOT_RECALL");
@@ -175,7 +176,7 @@ public class ProductItemService {
     }
 
     @Transactional
-    public void refurbish(Long id, ProductItemNotesRequest request) {
+    public void refurbish(UUID id, ProductItemNotesRequest request) {
         ProductItem item = findActiveOrThrow(id);
         if (!"recalled".equals(item.getStatus())) {
             throw new AppException("Product item cannot be refurbished", HttpStatus.CONFLICT, "PRODUCT_ITEM_CANNOT_REFURBISH");
@@ -195,7 +196,7 @@ public class ProductItemService {
     }
 
     @Transactional
-    public ProductItemPreflightResponse preflight(ProductItemPreflightRequest request, Long userId) {
+    public ProductItemPreflightResponse preflight(ProductItemPreflightRequest request, UUID userId) {
         requireUser(userId);
         List<String> inputs = request.getInputs() == null ? List.of() : request.getInputs();
         if (inputs.size() > 200) {
@@ -219,7 +220,7 @@ public class ProductItemService {
             }
         }
 
-        Map<String, Long> conflicts = claimRegistry.sync(userId, validChipIds);
+        Map<String, UUID> conflicts = claimRegistry.sync(userId, validChipIds);
         List<ProductItemPreflightRowResponse> rows = new ArrayList<>();
         for (ParsedDevice parsed : parsedRows) {
             if (!parsed.valid()) {
@@ -244,13 +245,13 @@ public class ProductItemService {
     }
 
     @Transactional
-    public void releasePreflight(Long userId) {
+    public void releasePreflight(UUID userId) {
         requireUser(userId);
         claimRegistry.releaseAll(userId);
     }
 
     @Transactional
-    public ProductItemBulkActivateResponse bulkActivate(ProductItemBulkActivateRequest request, Long userId) {
+    public ProductItemBulkActivateResponse bulkActivate(ProductItemBulkActivateRequest request, UUID userId) {
         requireUser(userId);
         if (request.getInputs().size() > 200) {
             throw new AppException("Too many inputs (max 200)", HttpStatus.BAD_REQUEST, "PRODUCT_ITEM_TOO_MANY_INPUTS");
@@ -258,7 +259,7 @@ public class ProductItemService {
         if (request.isReActivate() && (request.getReActivateReason() == null || request.getReActivateReason().isBlank())) {
             throw new AppException("re_activate_reason is required when re_activate is true", HttpStatus.BAD_REQUEST, "PRODUCT_ITEM_REACTIVATE_REASON_REQUIRED");
         }
-        if (!customerRepository.existsById(request.getCustomerId())) {
+        if (!customerRepository.existsById(request.getCustomerId().toString())) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
         }
 
@@ -280,7 +281,7 @@ public class ProductItemService {
                 .build();
     }
 
-    private ProductItemBulkRowResponse processBulkRow(String raw, ProductItemBulkActivateRequest request, Long userId, Map<String, Boolean> seen) {
+    private ProductItemBulkRowResponse processBulkRow(String raw, ProductItemBulkActivateRequest request, UUID userId, Map<String, Boolean> seen) {
         ParsedDevice parsed = parseDeviceInput(raw);
         if (!parsed.valid()) {
             return bulkError(raw, "invalid_format", null, null);
@@ -292,7 +293,7 @@ public class ProductItemService {
             return bulkError(raw, "being_added_by_other", null, null);
         }
         try {
-            Long productId = resolveBulkProductId(request.getProductId(), parsed.model());
+            UUID productId = resolveBulkProductId(request.getProductId(), parsed.model());
             ProductItem item = productItemRepository.findByCodeAndDeletedAtIsNull(parsed.chipId()).orElse(null);
             if (item == null) {
                 ProductItemCreateRequest createRequest = new ProductItemCreateRequest();
@@ -328,7 +329,7 @@ public class ProductItemService {
         }
     }
 
-    private Long resolveBulkProductId(Long requestedProductId, String model) {
+    private UUID resolveBulkProductId(UUID requestedProductId, String model) {
         if (requestedProductId != null) {
             if (!productRepository.existsById(requestedProductId)) {
                 throw new AppException("Product not found", HttpStatus.NOT_FOUND, "INVENTORY_PRODUCT_NOT_FOUND");
@@ -343,7 +344,7 @@ public class ProductItemService {
         throw new AppException("product_id or model is required", HttpStatus.BAD_REQUEST, "PRODUCT_ITEM_PRODUCT_REQUIRED");
     }
 
-    private ProductItemBulkRowResponse bulkError(String raw, String error, Long productId, Long productItemId) {
+    private ProductItemBulkRowResponse bulkError(String raw, String error, UUID productId, UUID productItemId) {
         return ProductItemBulkRowResponse.builder()
                 .input(raw)
                 .status("error")
@@ -353,7 +354,7 @@ public class ProductItemService {
                 .build();
     }
 
-    private Specification<ProductItem> spec(String status, String customerId, Long productId, String keyword,
+    private Specification<ProductItem> spec(String status, UUID customerId, UUID productId, String keyword,
                                             Instant createdAtFrom, Instant createdAtTo) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -362,8 +363,8 @@ public class ProductItemService {
                 validateStatus(status.trim());
                 predicates.add(cb.equal(root.get("status"), status.trim()));
             }
-            if (customerId != null && !customerId.isBlank()) {
-                predicates.add(cb.equal(root.get("customerId"), customerId.trim()));
+            if (customerId != null) {
+                predicates.add(cb.equal(root.get("customerId"), customerId));
             }
             if (productId != null) {
                 predicates.add(cb.equal(root.get("productId"), productId));
@@ -381,7 +382,7 @@ public class ProductItemService {
         };
     }
 
-    private ProductItem findActiveOrThrow(Long id) {
+    private ProductItem findActiveOrThrow(UUID id) {
         ProductItem item = productItemRepository.findById(id)
                 .orElseThrow(() -> new AppException("Product item not found", HttpStatus.NOT_FOUND, "PRODUCT_ITEM_NOT_FOUND"));
         if (item.getDeletedAt() != null) {
@@ -412,7 +413,7 @@ public class ProductItemService {
         }
     }
 
-    private void requireUser(Long userId) {
+    private void requireUser(UUID userId) {
         if (userId == null) {
             throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
         }

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,27 +36,27 @@ public class CustomerSupplementalProductService {
     }
 
     @Transactional
-    public CustomerSupplementalProductResponse create(String customerId, CustomerSupplementalProductCreateRequest request, Long userId) {
+    public CustomerSupplementalProductResponse create(String customerId, CustomerSupplementalProductCreateRequest request, UUID userId) {
         ensureCustomer(customerId);
         if (userId == null) throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
-        Long productId = resolveProductId(request);
+        UUID productId = resolveProductId(request);
         String code = firstNonBlank(request.getProductItemCode(), request.getChipId(), request.getModelName());
         if (code == null) throw invalid();
         ProductItem item = productItemRepository.findByCodeAndDeletedAtIsNull(code).orElseGet(() -> createItem(code, productId));
         ProductItemActivateRequest activate = new ProductItemActivateRequest();
-        activate.setCustomerId(customerId);
+        activate.setCustomerId(UUID.fromString(customerId));
         activate.setWarrantyExpiry(request.getWarrantyExpiry());
         return toResponse(productItemRepository.findById(productItemService.activate(item.getId(), activate, userId).getId()).orElseThrow());
     }
 
-    private ProductItem createItem(String code, Long productId) {
+    private ProductItem createItem(String code, UUID productId) {
         ProductItemCreateRequest request = new ProductItemCreateRequest();
         request.setCode(code);
         request.setProductId(productId);
         return productItemRepository.findById(productItemService.create(request).getId()).orElseThrow();
     }
 
-    private Long resolveProductId(CustomerSupplementalProductCreateRequest request) {
+    private UUID resolveProductId(CustomerSupplementalProductCreateRequest request) {
         if (request.getProductId() != null && productRepository.existsById(request.getProductId())) return request.getProductId();
         String code = firstNonBlank(request.getProductCode(), request.getProductName());
         if (code == null) throw invalid();

@@ -20,20 +20,20 @@ import java.util.List;
 public class LinkedFileController {
     private final LinkedFileService linkedFileService;
 
-    @PostMapping({"/products/{id}/images", "/activities/{id}/images", "/work-orders/{id}/attachments", "/campaigns/{id}/files"})
+    @PostMapping({"/products/{id}/images", "/activities/{id}/images", "/work-orders/{id}/attachments", "/campaigns/{id}/files", "/work-order-comments/{id}/attachments"})
     public ApiResponse<LinkedFileResponse> upload(@PathVariable String id, @RequestParam("file") MultipartFile file, @RequestParam(defaultValue = "0") int displayOrder, @AuthenticationPrincipal AccountPrincipal principal, HttpServletRequest request) {
         String path = request.getRequestURI();
         String uploadedBy = principal == null ? null : String.valueOf(principal.getId());
         return ApiResponse.created(linkedFileService.upload(entityType(path), id, purpose(path), file, uploadedBy, displayOrder), "File uploaded");
     }
 
-    @GetMapping({"/products/{id}/images", "/campaigns/{id}/files"})
+    @GetMapping({"/products/{id}/images", "/activities/{id}/images", "/work-orders/{id}/attachments", "/work-order-comments/{id}/attachments", "/campaigns/{id}/files"})
     public ApiResponse<List<LinkedFileResponse>> list(@PathVariable String id, HttpServletRequest request) {
         String path = request.getRequestURI();
         return ApiResponse.ok(linkedFileService.list(entityType(path), id, purpose(path)), null);
     }
 
-    @GetMapping({"/products/{id}/images/{fileId}", "/public/products/{id}/images/{fileId}", "/activities/{id}/images/{fileId}", "/work-orders/{id}/attachments/{fileId}", "/campaigns/{id}/files/{fileId}"})
+    @GetMapping({"/products/{id}/images/{fileId}", "/public/products/{id}/images/{fileId}", "/activities/{id}/images/{fileId}", "/work-orders/{id}/attachments/{fileId}", "/work-order-comments/{id}/attachments/{fileId}", "/campaigns/{id}/files/{fileId}"})
     public ResponseEntity<?> download(@PathVariable String id, @PathVariable String fileId, HttpServletRequest request) {
         String path = request.getRequestURI();
         var download = linkedFileService.download(entityType(path), id, fileId);
@@ -43,7 +43,7 @@ public class LinkedFileController {
                 .body(download.resource());
     }
 
-    @DeleteMapping({"/products/{id}/images/{fileId}", "/activities/{id}/images/{fileId}", "/work-orders/{id}/attachments/{fileId}", "/campaigns/{id}/files/{fileId}"})
+    @DeleteMapping({"/products/{id}/images/{fileId}", "/activities/{id}/images/{fileId}", "/work-orders/{id}/attachments/{fileId}", "/work-order-comments/{id}/attachments/{fileId}", "/campaigns/{id}/files/{fileId}"})
     public ApiResponse<Void> delete(@PathVariable String id, @PathVariable String fileId, HttpServletRequest request) {
         String path = request.getRequestURI();
         linkedFileService.delete(entityType(path), id, fileId);
@@ -53,6 +53,7 @@ public class LinkedFileController {
     private String entityType(String path) {
         if (path.contains("/products/")) return "product";
         if (path.contains("/activities/")) return "activity";
+        if (path.contains("/work-order-comments/")) return "work_order_comment";
         if (path.contains("/work-orders/")) return "work_order";
         return "campaign";
     }

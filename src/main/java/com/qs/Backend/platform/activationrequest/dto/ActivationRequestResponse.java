@@ -7,6 +7,7 @@ import lombok.Getter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -18,10 +19,10 @@ public class ActivationRequestResponse {
     private String requestType;
 
     @JsonProperty("sales_user_id")
-    private Long salesUserId;
+    private UUID salesUserId;
 
     @JsonProperty("customer_id")
-    private String customerId;
+    private UUID customerId;
 
     @JsonProperty("organization_id")
     private String organizationId;
@@ -39,7 +40,7 @@ public class ActivationRequestResponse {
     private Instant submittedAt;
 
     @JsonProperty("reviewed_by")
-    private Long reviewedBy;
+    private UUID reviewedBy;
 
     @JsonProperty("reviewed_at")
     private Instant reviewedAt;

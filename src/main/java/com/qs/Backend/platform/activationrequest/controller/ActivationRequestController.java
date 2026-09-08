@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/product-items/activation-requests")
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class ActivationRequestController {
     @PostMapping
     public ApiResponse<ActivationRequestResponse> submit(@Valid @RequestBody ActivationRequestSubmitRequest request,
                                                          @AuthenticationPrincipal AccountPrincipal principal) {
-        Long userId = principal == null ? null : principal.getId();
+        UUID userId = principal == null ? null : principal.getId();
         return ApiResponse.created(activationRequestService.submit(request, userId), "Activation request submitted");
     }
 
@@ -38,7 +40,7 @@ public class ActivationRequestController {
     @PostMapping("/{id}/approve")
     public ApiResponse<ActivationRequestResponse> approve(@PathVariable Long id,
                                                           @AuthenticationPrincipal AccountPrincipal principal) {
-        Long reviewerId = principal == null ? null : principal.getId();
+        UUID reviewerId = principal == null ? null : principal.getId();
         return ApiResponse.ok(activationRequestService.approve(id, reviewerId), "Activation request approved");
     }
 
@@ -46,7 +48,7 @@ public class ActivationRequestController {
     public ApiResponse<ActivationRequestResponse> reject(@PathVariable Long id,
                                                          @RequestBody(required = false) ActivationRequestRejectRequest request,
                                                          @AuthenticationPrincipal AccountPrincipal principal) {
-        Long reviewerId = principal == null ? null : principal.getId();
+        UUID reviewerId = principal == null ? null : principal.getId();
         return ApiResponse.ok(activationRequestService.reject(id, reviewerId, request), "Activation request rejected");
     }
 }

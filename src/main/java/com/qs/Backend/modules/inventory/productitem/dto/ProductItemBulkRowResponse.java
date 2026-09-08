@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -19,10 +21,10 @@ public class ProductItemBulkRowResponse {
     private String error;
 
     @JsonProperty("product_id")
-    private Long productId;
+    private UUID productId;
 
     @JsonProperty("product_item_id")
-    private Long productItemId;
+    private UUID productItemId;
 
     @JsonProperty("active_key")
     private String activeKey;

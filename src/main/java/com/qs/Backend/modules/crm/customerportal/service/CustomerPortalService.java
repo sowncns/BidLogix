@@ -4,16 +4,30 @@ import com.qs.Backend.modules.crm.customerportal.dto.PortalListResponse;
 import com.qs.Backend.modules.crm.customerportal.dto.PortalServiceRequestCreateRequest;
 import com.qs.Backend.modules.crm.customerportal.dto.PortalServiceRequestResponse;
 import com.qs.Backend.modules.crm.customerportal.dto.PortalWarrantySummaryResponse;
+import com.qs.Backend.modules.workorder.workordercomment.dto.WorkOrderCommentCreateRequest;
+import com.qs.Backend.modules.workorder.workordercomment.dto.WorkOrderCommentUpdateRequest;
+import com.qs.Backend.modules.workorder.workordercomment.service.WorkOrderCommentService;
+import com.qs.Backend.platform.file.service.LinkedFileService;
 import com.qs.Backend.shared.exception.AppException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class CustomerPortalService {
+
+    private final LinkedFileService linkedFileService;
+    private final WorkOrderCommentService workOrderCommentService;
 
     public PortalListResponse<Object> productItems() {
         return PortalListResponse.builder().items(List.of()).build();
@@ -56,5 +70,48 @@ public class CustomerPortalService {
                 .attachments(List.of())
                 .createdAt(Instant.now())
                 .build();
+    }
+
+    public Object uploadWorkOrderAttachment(String workOrderId, MultipartFile file) {
+        return linkedFileService.upload("work_order", workOrderId, "attachment", file, "portal", 0);
+    }
+
+    public ResponseEntity<Resource> downloadWorkOrderAttachment(String workOrderId, String fileId) {
+        return download(linkedFileService.download("work_order", workOrderId, fileId));
+    }
+
+    public Object comments(String workOrderId, int limit, int offset) {
+        return workOrderCommentService.list(workOrderId, limit, offset);
+    }
+
+    public Object createComment(String workOrderId, WorkOrderCommentCreateRequest request) {
+        return workOrderCommentService.create(workOrderId, request, null);
+    }
+
+    public Object updateComment(String commentId, WorkOrderCommentUpdateRequest request) {
+        return workOrderCommentService.update(commentId, request, null);
+    }
+
+    public void deleteComment(String commentId) {
+        workOrderCommentService.delete(commentId, null);
+    }
+
+    public Object uploadCommentAttachment(String commentId, MultipartFile file) {
+        return linkedFileService.upload("work_order_comment", commentId, "attachment", file, "portal", 0);
+    }
+
+    public ResponseEntity<Resource> downloadCommentAttachment(String commentId, String fileId) {
+        return download(linkedFileService.download("work_order_comment", commentId, fileId));
+    }
+
+    public void deleteCommentAttachment(String commentId, String fileId) {
+        linkedFileService.delete("work_order_comment", commentId, fileId);
+    }
+
+    private ResponseEntity<Resource> download(LinkedFileService.Download download) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(download.mimeType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + download.fileName().replace("\"", "") + "\"")
+                .body(download.resource());
     }
 }

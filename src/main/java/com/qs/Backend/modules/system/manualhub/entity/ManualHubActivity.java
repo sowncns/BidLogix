@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "manualhub_activities")
@@ -20,7 +21,7 @@ public class ManualHubActivity {
     private Long documentId;
 
     @Column(name = "actor_id")
-    private Long actorId;
+    private UUID actorId;
 
     @Column(name = "actor_name")
     private String actorName;

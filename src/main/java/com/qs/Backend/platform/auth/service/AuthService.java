@@ -154,7 +154,7 @@ public class AuthService implements AuthInterface {
     // ---- Password management ----
     @Override
     @Transactional
-    public void changePassword(Long accountId, ChangePasswordRequest request) {
+    public void changePassword(UUID accountId, ChangePasswordRequest request) {
         passwordPolicy.validate(request.getNewPassword(), request.getConfirmPassword());
 
         AuthUser account = accountRepository.findById(accountId)
@@ -224,7 +224,7 @@ public class AuthService implements AuthInterface {
     // ---- SSO ticket handoff ----
     @Override 
     @Transactional
-    public SSOTicketResponse issueSsoTicket(Long accountId) {
+    public SSOTicketResponse issueSsoTicket(UUID accountId) {
         AuthUser account = accountRepository.findById(accountId)
                 .filter(AuthUser::isActive)
                 .orElseThrow(() -> new AppException("Tài khoản không tồn tại hoặc đã bị khóa", HttpStatus.UNAUTHORIZED, "USER_INACTIVE"));
@@ -340,7 +340,7 @@ public class AuthService implements AuthInterface {
 
     // ---- Current-user / permissions ----
     @Override 
-    public UserResponse getUserWithPermissions(Long accountId) {
+    public UserResponse getUserWithPermissions(UUID accountId) {
         AuthUser account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AppException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
 

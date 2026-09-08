@@ -5,11 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class UserResponse {
-    private Long id;
+    private UUID id;
     private String username;
     private String email;
     private String phone;
@@ -17,5 +18,5 @@ public class UserResponse {
     private List<String> roles;
     private List<String> permissions;
     private DataScope dataScope;
-    private List<Long> organizationIds;
+    private List<UUID> organizationIds;
 }

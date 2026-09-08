@@ -4,11 +4,12 @@ import com.qs.Backend.platform.permission.entity.AccountOrganization;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface AccountOrganizationRepository extends JpaRepository<AccountOrganization, Long> {
-    List<AccountOrganization> findByAccountId(Long accountId);
+    List<AccountOrganization> findByAccountId(UUID accountId);
 
-    void deleteByAccountId(Long accountId);
+    void deleteByAccountId(UUID accountId);
 
-    boolean existsByAccountIdAndOrganizationId(Long accountId, Long organizationId);
+    boolean existsByAccountIdAndOrganizationId(UUID accountId, UUID organizationId);
 }

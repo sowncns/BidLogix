@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 // Actor fields are denormalized (no FK to accounts) so this stays readable even after the
 // account is deleted/renamed, and so platform.logging doesn't depend on platform.auth.
@@ -19,7 +20,7 @@ public class AuditLog {
     private Long id;
 
     @Column(name = "actor_id")
-    private Long actorId;
+    private UUID actorId;
 
     @Column(name = "actor_username")
     private String actorUsername;

@@ -8,8 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface SessionRepository extends JpaRepository<Session, Long> {
+public interface SessionRepository extends JpaRepository<Session, UUID> {
 
     Optional<Session> findByRefreshTokenHash(String refreshTokenHash);
 
@@ -17,5 +18,5 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
 
     @Modifying
     @Query("UPDATE Session s SET s.revokedAt = :now WHERE s.account.id = :accountId AND s.revokedAt IS NULL")
-    void revokeAllForAccount(@Param("accountId") Long accountId, @Param("now") Instant now);
+    void revokeAllForAccount(@Param("accountId") UUID accountId, @Param("now") Instant now);
 }

@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.UUID;
 
-public interface AccountRepository extends JpaRepository<AuthUser, Long>, JpaSpecificationExecutor<AuthUser> {
+public interface AccountRepository extends JpaRepository<AuthUser, UUID>, JpaSpecificationExecutor<AuthUser> {
 
     Optional<AuthUser> findByUsername(String username);
 
@@ -20,5 +21,5 @@ public interface AccountRepository extends JpaRepository<AuthUser, Long>, JpaSpe
     @Query("SELECT u FROM AuthUser u WHERE u.username = :value OR u.email = :value OR u.phone = :value")
     Optional<AuthUser> findAnyStatusByUsernameOrEmailOrPhone(@Param("value") String value);
 
-    Optional<AuthUser> findByRefId(Long refId);
+    Optional<AuthUser> findByRefId(UUID refId);
 }

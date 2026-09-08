@@ -1,24 +1,25 @@
 package com.qs.Backend.modules.inventory.productitem.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
 public class ProductItemBulkActivateRequest {
 
-    @NotBlank
+    @NotNull
     @JsonProperty("customer_id")
-    private String customerId;
+    private UUID customerId;
 
     @JsonProperty("product_id")
-    private Long productId;
+    private UUID productId;
 
     @NotEmpty
     private List<String> inputs;

@@ -5,13 +5,14 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class ProfileResponse {
     private Long id;
     @JsonProperty("user_id")
-    private Long userId;
+    private UUID userId;
     @JsonProperty("first_name")
     private String firstName;
     @JsonProperty("last_name")

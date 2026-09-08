@@ -9,6 +9,7 @@ import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "product_item_logs")
@@ -17,22 +18,22 @@ import java.util.Map;
 public class ProductItemLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
-    private Long productItemId;
+    private UUID productItemId;
 
     @Column(nullable = false, length = 50)
     private String eventType;
 
-    private Long actorId;
+    private UUID actorId;
     private String actorRole;
 
     @Column(nullable = false, length = 50)
     private String source = "system";
 
-    private String customerId;
+    private UUID customerId;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 // Display info split from AuthUser (auth identity) - one-to-one via userId, no FK
 // (same decoupling convention as AccountOrganization).
@@ -19,7 +20,7 @@ public class Profile {
     private Long id;
 
     @Column(name = "user_id", nullable = false, unique = true)
-    private Long userId;
+    private UUID userId;
 
     private String firstName;
 

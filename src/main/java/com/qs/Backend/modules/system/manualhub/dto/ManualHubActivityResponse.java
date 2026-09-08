@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -25,7 +26,7 @@ public class ManualHubActivityResponse {
     private String productName;
 
     @JsonProperty("actor_id")
-    private Long actorId;
+    private UUID actorId;
 
     @JsonProperty("actor_name")
     private String actorName;

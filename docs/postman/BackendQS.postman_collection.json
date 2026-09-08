@@ -1,0 +1,273 @@
+{
+  "info": {
+    "name": "BackendQS API",
+    "description": "Postman collection for BackendQS. Set baseUrl, then run Auth/Login to auto-save token and refreshToken when present in the response.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "id", "value": "1", "type": "string" },
+    { "key": "customerId", "value": "1", "type": "string" },
+    { "key": "productId", "value": "1", "type": "string" },
+    { "key": "productItemId", "value": "1", "type": "string" },
+    { "key": "workOrderId", "value": "1", "type": "string" },
+    { "key": "fileId", "value": "1", "type": "string" },
+    { "key": "version", "value": "1", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        { "name": "Register", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"username\": \"admin\",\n  \"email\": \"admin@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\",\n  \"roleCodes\": [\"admin\"]\n}"}, "url": "{{baseUrl}}/auth/register" } },
+        { "name": "Login", "event": [{"listen":"test","script":{"type":"text/javascript","exec":["const json = pm.response.json();","const data = json.data || json;","if (data.accessToken) pm.collectionVariables.set('token', data.accessToken);","if (data.token) pm.collectionVariables.set('token', data.token);","if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);"]}}], "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"username\": \"admin@example.com\",\n  \"password\": \"Password123\"\n}"}, "url": "{{baseUrl}}/auth/login" } },
+        { "name": "Refresh", "request": { "method": "POST", "url": "{{baseUrl}}/auth/refresh?refreshToken={{refreshToken}}" } },
+        { "name": "Forgot Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"admin@example.com\"\n}"}, "url": "{{baseUrl}}/auth/forgot-password" } },
+        { "name": "Reset Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"token\": \"reset-token\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\"\n}"}, "url": "{{baseUrl}}/auth/reset-password" } },
+        { "name": "Customer Register", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"password\": \"Password123\",\n  \"fullName\": \"Customer Test\",\n  \"region\": \"vi\"\n}"}, "url": "{{baseUrl}}/auth/customer-register" } },
+        { "name": "Verify", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"target\": \"customer@example.com\",\n  \"type\": \"email\",\n  \"purpose\": \"registration\",\n  \"code\": \"123456\"\n}"}, "url": "{{baseUrl}}/auth/verify" } },
+        { "name": "Resend Verification", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"customer@example.com\"\n}"}, "url": "{{baseUrl}}/auth/resend-verification" } },
+        { "name": "SSO Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"ticket\": \"sso-ticket\"\n}"}, "url": "{{baseUrl}}/auth/sso" } },
+        { "name": "Me", "request": { "method": "GET", "url": "{{baseUrl}}/auth/me" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/auth/logout" } },
+        { "name": "Change Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"currentPassword\": \"Password123\",\n  \"newPassword\": \"Password1234\",\n  \"confirmPassword\": \"Password1234\"\n}"}, "url": "{{baseUrl}}/auth/change-password" } },
+        { "name": "Issue SSO Ticket", "request": { "method": "POST", "url": "{{baseUrl}}/auth/sso/ticket" } }
+      ]
+    },
+    {
+      "name": "Platform",
+      "item": [
+        { "name": "Captcha", "request": { "method": "GET", "url": "{{baseUrl}}/captcha" } },
+        { "name": "Public Captcha", "auth": {"type":"noauth"}, "request": { "method": "GET", "url": "{{baseUrl}}/public/captcha" } },
+        { "name": "Permissions List", "request": { "method": "GET", "url": "{{baseUrl}}/permissions" } },
+        { "name": "Audit Logs", "request": { "method": "GET", "url": "{{baseUrl}}/audit/rbac?page=0&size=20" } },
+        { "name": "Audit Log Get", "request": { "method": "GET", "url": "{{baseUrl}}/audit/rbac/{{id}}" } },
+        { "name": "Profile Me", "request": { "method": "GET", "url": "{{baseUrl}}/profile" } },
+        { "name": "Profile Update Me", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"}, "url": "{{baseUrl}}/profile" } },
+        { "name": "Profile Change Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"currentPassword\": \"Password123\",\n  \"newPassword\": \"Password1234\",\n  \"confirmPassword\": \"Password1234\"\n}"}, "url": "{{baseUrl}}/profile/change-password" } },
+        { "name": "Upload My Avatar", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"file","type":"file","src":[]}]}, "url": "{{baseUrl}}/profile/avatar" } },
+        { "name": "User Profile", "request": { "method": "GET", "url": "{{baseUrl}}/users/{{id}}/profile" } },
+        { "name": "Update User Profile", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\"\n}"}, "url": "{{baseUrl}}/users/{{id}}/profile" } },
+        { "name": "Upload User Avatar", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"file","type":"file","src":[]}]}, "url": "{{baseUrl}}/users/{{id}}/avatar" } },
+        { "name": "Download User Avatar", "request": { "method": "GET", "url": "{{baseUrl}}/users/{{id}}/avatar/{{fileId}}" } }
+      ]
+    },
+    {
+      "name": "Users Roles Organizations",
+      "item": [
+        { "name": "Users List", "request": { "method": "GET", "url": "{{baseUrl}}/users?limit=50&offset=0" } },
+        { "name": "Users Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"email\": \"user@example.com\",\n  \"phone\": \"0901234567\",\n  \"fullName\": \"User Test\",\n  \"password\": \"Password123\",\n  \"roleCodes\": [\"staff\"]\n}"}, "url": "{{baseUrl}}/users" } },
+        { "name": "Users Get", "request": { "method": "GET", "url": "{{baseUrl}}/users/{{id}}" } },
+        { "name": "Users Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"fullName\": \"Updated User\",\n  \"phone\": \"0901234567\"\n}"}, "url": "{{baseUrl}}/users/{{id}}" } },
+        { "name": "Users Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/users/{{id}}" } },
+        { "name": "User Admin Change Password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"newPassword\": \"Password1234\",\n  \"confirmPassword\": \"Password1234\"\n}"}, "url": "{{baseUrl}}/users/{{id}}/change-password" } },
+        { "name": "User Email Notifications", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"activationRequest\": true,\n  \"serviceRequest\": true\n}"}, "url": "{{baseUrl}}/users/{{id}}/email-notifications" } },
+        { "name": "My Email Notifications", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"activationRequest\": true,\n  \"serviceRequest\": true\n}"}, "url": "{{baseUrl}}/users/me/email-notifications" } },
+        { "name": "Roles List", "request": { "method": "GET", "url": "{{baseUrl}}/roles?limit=50&offset=0" } },
+        { "name": "Roles Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"code\": \"test_role\",\n  \"name\": \"Test Role\",\n  \"dataScope\": \"ALL\"\n}"}, "url": "{{baseUrl}}/roles" } },
+        { "name": "Roles Get", "request": { "method": "GET", "url": "{{baseUrl}}/roles/{{id}}" } },
+        { "name": "Roles Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Role\",\n  \"dataScope\": \"ALL\"\n}"}, "url": "{{baseUrl}}/roles/{{id}}" } },
+        { "name": "Roles Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/roles/{{id}}" } },
+        { "name": "Role Assign Permission", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"permissionCode\": \"USER_MANAGE\"\n}"}, "url": "{{baseUrl}}/roles/{{id}}/permissions" } },
+        { "name": "Role Revoke Permission", "request": { "method": "DELETE", "url": "{{baseUrl}}/roles/{{id}}/permissions/USER_MANAGE" } },
+        { "name": "Organizations List", "request": { "method": "GET", "url": "{{baseUrl}}/organizations?limit=50&offset=0" } },
+        { "name": "Organizations Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"code\": \"ORG001\",\n  \"name\": \"Main Organization\",\n  \"status\": \"active\"\n}"}, "url": "{{baseUrl}}/organizations" } },
+        { "name": "Organizations Get", "request": { "method": "GET", "url": "{{baseUrl}}/organizations/{{id}}" } },
+        { "name": "Organizations Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Organization\",\n  \"status\": \"active\"\n}"}, "url": "{{baseUrl}}/organizations/{{id}}" } },
+        { "name": "Organizations Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/organizations/{{id}}" } }
+      ]
+    },
+    {
+      "name": "CRM",
+      "item": [
+        { "name": "Customers List", "request": { "method": "GET", "url": "{{baseUrl}}/customers?limit=50&offset=0" } },
+        { "name": "Customers Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"fullName\": \"Customer Test\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0901234567\",\n  \"companyName\": \"QS Test\",\n  \"source\": \"manual\"\n}"}, "url": "{{baseUrl}}/customers" } },
+        { "name": "Customers Get", "request": { "method": "GET", "url": "{{baseUrl}}/customers/{{customerId}}" } },
+        { "name": "Customers Update", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"fullName\": \"Updated Customer\",\n  \"phone\": \"0901234567\"\n}"}, "url": "{{baseUrl}}/customers/{{customerId}}" } },
+        { "name": "Customers Patch Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"fullName\": \"Updated Customer\"\n}"}, "url": "{{baseUrl}}/customers/{{customerId}}" } },
+        { "name": "Customers Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/customers/{{customerId}}" } },
+        { "name": "Customers Tracking Stats", "request": { "method": "GET", "url": "{{baseUrl}}/customers/tracking-stats?organization_id=1" } },
+        { "name": "Customers Export Template", "request": { "method": "GET", "url": "{{baseUrl}}/customers/export-template" } },
+        { "name": "Customers Import", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"file","type":"file","src":[]}]}, "url": "{{baseUrl}}/customers/import" } },
+        { "name": "Customer Portal Status", "request": { "method": "GET", "url": "{{baseUrl}}/customers/{{customerId}}/portal" } },
+        { "name": "Customer Grant Portal", "request": { "method": "POST", "url": "{{baseUrl}}/customers/{{customerId}}/grant-portal" } },
+        { "name": "Customer Revoke Portal", "request": { "method": "POST", "url": "{{baseUrl}}/customers/{{customerId}}/revoke-portal" } },
+        { "name": "Customer Reset Portal Password", "request": { "method": "POST", "url": "{{baseUrl}}/customers/{{customerId}}/reset-portal-password" } },
+        { "name": "Customer Merge", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"source_id\": \"2\"\n}"}, "url": "{{baseUrl}}/customers/{{customerId}}/merge" } },
+        { "name": "Customer Logs", "request": { "method": "GET", "url": "{{baseUrl}}/customers/{{customerId}}/logs?limit=50&offset=0" } },
+        { "name": "Customer Activities", "request": { "method": "GET", "url": "{{baseUrl}}/customers/{{customerId}}/activities?limit=50&offset=0" } },
+        { "name": "Customer Activity Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"action\": \"note\",\n  \"content\": \"Called customer\"\n}"}, "url": "{{baseUrl}}/customers/{{customerId}}/activities" } },
+        { "name": "Activity Get", "request": { "method": "GET", "url": "{{baseUrl}}/activities/{{id}}" } },
+        { "name": "Activity Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"content\": \"Updated note\"\n}"}, "url": "{{baseUrl}}/activities/{{id}}" } },
+        { "name": "Activity Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/activities/{{id}}" } },
+        { "name": "Customer View Record", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"customerId\": \"{{customerId}}\"\n}"}, "url": "{{baseUrl}}/customer-views" } },
+        { "name": "Customer Supplemental Products", "request": { "method": "GET", "url": "{{baseUrl}}/customers/{{customerId}}/supplemental-products" } },
+        { "name": "Customer Supplemental Product Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productCode\": \"SUP001\",\n  \"serialNumber\": \"SUP-SN-001\"\n}"}, "url": "{{baseUrl}}/customers/{{customerId}}/supplemental-products" } },
+        { "name": "Business Fields List", "request": { "method": "GET", "url": "{{baseUrl}}/business-fields?limit=50&offset=0" } },
+        { "name": "Public Business Fields", "auth": {"type":"noauth"}, "request": { "method": "GET", "url": "{{baseUrl}}/public/business-fields?limit=50&offset=0" } },
+        { "name": "Business Fields Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Manufacturing\",\n  \"description\": \"Manufacturing\",\n  \"labelVI\": \"Sản xuất\",\n  \"labelEN\": \"Manufacturing\"\n}"}, "url": "{{baseUrl}}/business-fields" } },
+        { "name": "Business Fields Get", "request": { "method": "GET", "url": "{{baseUrl}}/business-fields/{{id}}" } },
+        { "name": "Business Fields Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Field\"\n}"}, "url": "{{baseUrl}}/business-fields/{{id}}" } },
+        { "name": "Business Fields Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/business-fields/{{id}}" } },
+        { "name": "Customer Groups List", "request": { "method": "GET", "url": "{{baseUrl}}/customer-groups?limit=50&offset=0" } },
+        { "name": "Customer Groups Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"VIP\",\n  \"description\": \"VIP customers\"\n}"}, "url": "{{baseUrl}}/customer-groups" } },
+        { "name": "Customer Groups Get", "request": { "method": "GET", "url": "{{baseUrl}}/customer-groups/{{id}}" } },
+        { "name": "Customer Groups Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"VIP Updated\"\n}"}, "url": "{{baseUrl}}/customer-groups/{{id}}" } },
+        { "name": "Customer Groups Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/customer-groups/{{id}}" } },
+        { "name": "Customer Statuses List", "request": { "method": "GET", "url": "{{baseUrl}}/customer-statuses?limit=50&offset=0" } },
+        { "name": "Customer Statuses Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"active\",\n  \"description\": \"Active\"\n}"}, "url": "{{baseUrl}}/customer-statuses" } },
+        { "name": "Customer Statuses Get", "request": { "method": "GET", "url": "{{baseUrl}}/customer-statuses/{{id}}" } },
+        { "name": "Customer Statuses Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"description\": \"Updated\"\n}"}, "url": "{{baseUrl}}/customer-statuses/{{id}}" } },
+        { "name": "Customer Statuses Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/customer-statuses/{{id}}" } },
+        { "name": "Public Leads Create", "auth": {"type":"noauth"}, "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Lead Test\",\n  \"phone\": \"0901234567\",\n  \"email\": \"lead@example.com\",\n  \"business_field\": \"Manufacturing\",\n  \"notes\": \"Need consultation\"\n}"}, "url": "{{baseUrl}}/public/leads" } },
+        { "name": "Leads List", "request": { "method": "GET", "url": "{{baseUrl}}/leads?limit=50&offset=0" } },
+        { "name": "Leads Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Lead Test\",\n  \"phone\": \"0901234567\",\n  \"email\": \"lead@example.com\",\n  \"businessField\": \"Manufacturing\",\n  \"notes\": \"Need consultation\"\n}"}, "url": "{{baseUrl}}/leads" } },
+        { "name": "Leads Get", "request": { "method": "GET", "url": "{{baseUrl}}/leads/{{id}}" } },
+        { "name": "Leads Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"notes\": \"Updated notes\"\n}"}, "url": "{{baseUrl}}/leads/{{id}}" } },
+        { "name": "Leads Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/leads/{{id}}" } },
+        { "name": "Metadata Customer", "request": { "method": "GET", "url": "{{baseUrl}}/metadata/customer" } },
+        { "name": "Metadata Lead", "request": { "method": "GET", "url": "{{baseUrl}}/metadata/lead" } },
+        { "name": "Metadata Users", "request": { "method": "GET", "url": "{{baseUrl}}/metadata/users" } },
+        { "name": "Dashboard Stats", "request": { "method": "GET", "url": "{{baseUrl}}/dashboard/stats" } },
+        { "name": "Portal Product Items", "request": { "method": "GET", "url": "{{baseUrl}}/my/product-items" } },
+        { "name": "Portal Product Item", "request": { "method": "GET", "url": "{{baseUrl}}/my/product-items/{{productItemId}}" } },
+        { "name": "Portal Warranties", "request": { "method": "GET", "url": "{{baseUrl}}/my/warranties" } },
+        { "name": "Portal Service Requests", "request": { "method": "GET", "url": "{{baseUrl}}/my/service-requests" } },
+        { "name": "Portal Service Request", "request": { "method": "GET", "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}" } },
+        { "name": "Portal Create Service Request", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productItemId\": \"{{productItemId}}\",\n  \"description\": \"Need service\",\n  \"priority\": \"normal\"\n}"}, "url": "{{baseUrl}}/my/service-requests" } }
+        ,{ "name": "Portal Upload Service Attachment", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"file","type":"file","src":[]}]}, "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/attachments" } }
+        ,{ "name": "Portal Download Service Attachment", "request": { "method": "GET", "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/attachments/{{fileId}}" } }
+        ,{ "name": "Portal Comments", "request": { "method": "GET", "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments?limit=50&offset=0" } }
+        ,{ "name": "Portal Create Comment", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"content\": \"Portal comment\",\n  \"internal\": false\n}"}, "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments" } }
+        ,{ "name": "Portal Update Comment", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"content\": \"Updated portal comment\"\n}"}, "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments/{{id}}" } }
+        ,{ "name": "Portal Delete Comment", "request": { "method": "DELETE", "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments/{{id}}" } }
+        ,{ "name": "Portal Upload Comment Attachment", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"file","type":"file","src":[]}]}, "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments/{{id}}/attachments" } }
+        ,{ "name": "Portal Download Comment Attachment", "request": { "method": "GET", "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments/{{id}}/attachments/{{fileId}}" } }
+        ,{ "name": "Portal Delete Comment Attachment", "request": { "method": "DELETE", "url": "{{baseUrl}}/my/service-requests/{{workOrderId}}/comments/{{id}}/attachments/{{fileId}}" } }
+      ]
+    },
+    {
+      "name": "Inventory Keygen",
+      "item": [
+        { "name": "Products List", "request": { "method": "GET", "url": "{{baseUrl}}/products?limit=50&offset=0" } },
+        { "name": "Products Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"code\": \"P001\",\n  \"name\": \"Machine P001\",\n  \"warrantyMonths\": 12,\n  \"specifications\": {}\n}"}, "url": "{{baseUrl}}/products" } },
+        { "name": "Products Get", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productId}}" } },
+        { "name": "Products Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Product\"\n}"}, "url": "{{baseUrl}}/products/{{productId}}" } },
+        { "name": "Products Adjust Stock", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"delta\": 1\n}"}, "url": "{{baseUrl}}/products/{{productId}}/stock" } },
+        { "name": "Products Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/products/{{productId}}" } },
+        { "name": "Product Items List", "request": { "method": "GET", "url": "{{baseUrl}}/product-items?limit=50&offset=0" } },
+        { "name": "Product Items Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productId\": {{productId}},\n  \"serialNumber\": \"SN-001\",\n  \"status\": \"inactive\"\n}"}, "url": "{{baseUrl}}/product-items" } },
+        { "name": "Product Items Bulk Activate", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"customerId\": \"{{customerId}}\",\n  \"inputs\": [\"P001-SN001\"],\n  \"warrantyExpiry\": null\n}"}, "url": "{{baseUrl}}/product-items/bulk-activate" } },
+        { "name": "Product Items Preflight", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"inputs\": [\"P001-SN001\"]\n}"}, "url": "{{baseUrl}}/product-items/preflight" } },
+        { "name": "Product Items Release Preflight", "request": { "method": "POST", "url": "{{baseUrl}}/product-items/preflight/release" } },
+        { "name": "Product Items Get", "request": { "method": "GET", "url": "{{baseUrl}}/product-items/{{productItemId}}" } },
+        { "name": "Product Items Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"notes\": \"Updated\"\n}"}, "url": "{{baseUrl}}/product-items/{{productItemId}}" } },
+        { "name": "Product Items Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/product-items/{{productItemId}}" } },
+        { "name": "Product Items Activate", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"customerId\": \"{{customerId}}\",\n  \"warrantyExpiry\": null\n}"}, "url": "{{baseUrl}}/product-items/{{productItemId}}/activate" } },
+        { "name": "Product Items Recall", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"notes\": \"Recall reason\"\n}"}, "url": "{{baseUrl}}/product-items/{{productItemId}}/recall" } },
+        { "name": "Product Items Refurbish", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"notes\": \"Refurbish notes\"\n}"}, "url": "{{baseUrl}}/product-items/{{productItemId}}/refurbish" } },
+        { "name": "Product Item Logs", "request": { "method": "GET", "url": "{{baseUrl}}/product-items/{{productItemId}}/logs?limit=50&offset=0" } },
+        { "name": "Keygen Factory", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"time\": null\n}"}, "url": "{{baseUrl}}/keygen/factory" } },
+        { "name": "Keygen Active", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"input\": \"P001-SN001\"\n}"}, "url": "{{baseUrl}}/keygen/active" } },
+        { "name": "Keygen Machine Lock", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"input\": \"DEVICE001\"\n}"}, "url": "{{baseUrl}}/keygen/machine-lock" } },
+        { "name": "Keygen History", "request": { "method": "GET", "url": "{{baseUrl}}/keygen/history?limit=50&offset=0" } }
+      ]
+    },
+    {
+      "name": "Workorder Service",
+      "item": [
+        { "name": "Work Orders List", "request": { "method": "GET", "url": "{{baseUrl}}/work-orders?limit=50&offset=0" } },
+        { "name": "Work Orders Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productItemId\": \"{{productItemId}}\",\n  \"type\": \"customer_request\",\n  \"priority\": \"normal\",\n  \"description\": \"Service request\"\n}"}, "url": "{{baseUrl}}/work-orders" } },
+        { "name": "Work Orders Get", "request": { "method": "GET", "url": "{{baseUrl}}/work-orders/{{workOrderId}}" } },
+        { "name": "Work Orders Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"priority\": \"high\",\n  \"description\": \"Updated\"\n}"}, "url": "{{baseUrl}}/work-orders/{{workOrderId}}" } },
+        { "name": "Work Orders Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/work-orders/{{workOrderId}}" } },
+        { "name": "Work Orders Start", "request": { "method": "POST", "url": "{{baseUrl}}/work-orders/{{workOrderId}}/start" } },
+        { "name": "Work Orders Complete", "request": { "method": "POST", "url": "{{baseUrl}}/work-orders/{{workOrderId}}/complete" } },
+        { "name": "Work Orders Cancel", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"reason\": \"Cancelled\"\n}"}, "url": "{{baseUrl}}/work-orders/{{workOrderId}}/cancel" } },
+        { "name": "Work Orders Reopen", "request": { "method": "POST", "url": "{{baseUrl}}/work-orders/{{workOrderId}}/reopen" } },
+        { "name": "Work Order Comments List", "request": { "method": "GET", "url": "{{baseUrl}}/work-orders/{{workOrderId}}/comments?limit=50&offset=0" } },
+        { "name": "Work Order Comments Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"content\": \"Comment text\",\n  \"internal\": false\n}"}, "url": "{{baseUrl}}/work-orders/{{workOrderId}}/comments" } },
+        { "name": "Work Order Comments Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"content\": \"Updated comment\"\n}"}, "url": "{{baseUrl}}/work-order-comments/{{id}}" } },
+        { "name": "Work Order Comments Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/work-order-comments/{{id}}" } },
+        { "name": "Service Logs List", "request": { "method": "GET", "url": "{{baseUrl}}/service-logs?limit=50&offset=0" } },
+        { "name": "Service Logs Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productItemId\": \"{{productItemId}}\",\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"serviceType\": \"maintenance\",\n  \"issueDescription\": \"Issue\",\n  \"actionTaken\": \"Action\"\n}"}, "url": "{{baseUrl}}/service-logs" } },
+        { "name": "Service Logs Get", "request": { "method": "GET", "url": "{{baseUrl}}/service-logs/{{id}}" } },
+        { "name": "Service Logs Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"actionTaken\": \"Updated action\"\n}"}, "url": "{{baseUrl}}/service-logs/{{id}}" } }
+      ]
+    },
+    {
+      "name": "Notification Messaging",
+      "item": [
+        { "name": "Notifications List", "request": { "method": "GET", "url": "{{baseUrl}}/notifications?unread=false&limit=20" } },
+        { "name": "Notifications Unread Count", "request": { "method": "GET", "url": "{{baseUrl}}/notifications/unread-count" } },
+        { "name": "Notifications Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"userId\": \"{{id}}\",\n  \"type\": \"test\",\n  \"params\": {},\n  \"link\": \"/test\"\n}"}, "url": "{{baseUrl}}/notifications" } },
+        { "name": "Notifications Mark Read", "request": { "method": "PATCH", "url": "{{baseUrl}}/notifications/{{id}}/read" } },
+        { "name": "Notifications Read All", "request": { "method": "POST", "url": "{{baseUrl}}/notifications/read-all" } },
+        { "name": "Notifications Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/notifications/{{id}}" } },
+        { "name": "Notifications Delete All", "request": { "method": "DELETE", "url": "{{baseUrl}}/notifications" } },
+        { "name": "Message Send Email", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"channel\": \"email\",\n  \"recipient\": \"test@example.com\",\n  \"template\": \"verification_otp\",\n  \"params\": {\"code\": \"123456\"}\n}"}, "url": "{{baseUrl}}/messages/send" } },
+        { "name": "Message Send Zalo", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"channel\": \"zalo\",\n  \"recipient\": \"0901234567\",\n  \"template\": \"template_id\",\n  \"params\": {\"otp\": \"123456\"}\n}"}, "url": "{{baseUrl}}/messages/send" } },
+        { "name": "Message Send WhatsApp Template", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"channel\": \"whatsapp\",\n  \"recipient\": \"0901234567\",\n  \"template\": \"otp_template\",\n  \"params\": {\"lang\": \"vi\", \"p1\": \"123456\"}\n}"}, "url": "{{baseUrl}}/messages/send" } },
+        { "name": "Message Send WhatsApp Text", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"channel\": \"whatsapp\",\n  \"recipient\": \"0901234567\",\n  \"template\": \"\",\n  \"params\": {\"body\": \"hello\"}\n}"}, "url": "{{baseUrl}}/messages/send" } }
+      ]
+    },
+    {
+      "name": "ManualHub",
+      "item": [
+        { "name": "Documents List", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/documents?limit=20&offset=0" } },
+        { "name": "Documents Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productId\": {{productId}},\n  \"title\": \"Manual Test\",\n  \"description\": \"Manual description\",\n  \"documentType\": \"manual\",\n  \"format\": \"docx\",\n  \"language\": \"vi\"\n}"}, "url": "{{baseUrl}}/manualhub/documents" } },
+        { "name": "Documents Get", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/documents/{{id}}" } },
+        { "name": "Documents Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"title\": \"Updated Manual\"\n}"}, "url": "{{baseUrl}}/manualhub/documents/{{id}}" } },
+        { "name": "Documents Publish", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/publish" } },
+        { "name": "Documents Hide", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/hide" } },
+        { "name": "Documents Unhide", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/unhide" } },
+        { "name": "Documents Delete Request", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/delete-request" } },
+        { "name": "Documents Delete Approve", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/delete-approve" } },
+        { "name": "Documents Delete Reject", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/delete-reject" } },
+        { "name": "Documents Hard Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/manualhub/documents/{{id}}" } },
+        { "name": "Documents Rollback", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"reason\": \"Rollback reason\"\n}"}, "url": "{{baseUrl}}/manualhub/documents/{{id}}/rollback" } },
+        { "name": "Document Versions", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/documents/{{id}}/versions" } },
+        { "name": "Document Version Get", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/documents/{{id}}/versions/{{version}}" } },
+        { "name": "Document Activities", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/documents/{{id}}/activities" } },
+        { "name": "All Activities", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/activities" } },
+        { "name": "ManualHub Stats", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/stats" } },
+        { "name": "OnlyOffice Config", "request": { "method": "GET", "url": "{{baseUrl}}/manualhub/documents/{{id}}/onlyoffice-config?readOnly=false" } },
+        { "name": "OnlyOffice ForceSave", "request": { "method": "POST", "url": "{{baseUrl}}/manualhub/documents/{{id}}/onlyoffice-forcesave" } },
+        { "name": "OnlyOffice Callback", "auth": {"type":"noauth"}, "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": 2,\n  \"url\": \"http://example.com/document.docx\"\n}"}, "url": "{{baseUrl}}/public/manualhub/documents/{{id}}/onlyoffice-callback" } },
+        { "name": "Upload Document File", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"files","type":"file","src":[]}]}, "url": "{{baseUrl}}/manualhub/documents/{{id}}/images" } },
+        { "name": "Upload Document File Go Path", "request": { "method": "POST", "body": {"mode":"formdata","formdata":[{"key":"files","type":"file","src":[]}]}, "url": "{{baseUrl}}/manualhub/documents/{{id}}/files" } },
+        { "name": "Public Documents", "auth": {"type":"noauth"}, "request": { "method": "GET", "url": "{{baseUrl}}/public/manualhub/documents?limit=20&offset=0" } },
+        { "name": "Public Download PDF", "auth": {"type":"noauth"}, "request": { "method": "GET", "url": "{{baseUrl}}/public/manualhub/documents/{{id}}/download-pdf" } },
+        { "name": "Public View PDF", "auth": {"type":"noauth"}, "request": { "method": "GET", "url": "{{baseUrl}}/public/manualhub/documents/{{id}}/view-pdf" } },
+        { "name": "Public File Download", "auth": {"type":"noauth"}, "request": { "method": "GET", "url": "{{baseUrl}}/public/manualhub/documents/{{id}}/files/{{fileId}}" } }
+      ]
+    },
+    {
+      "name": "Activation Sales Student",
+      "item": [
+        { "name": "Activation Requests List", "request": { "method": "GET", "url": "{{baseUrl}}/product-items/activation-requests?limit=50&offset=0" } },
+        { "name": "Activation Requests Submit", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"requestType\": \"activation\",\n  \"customerId\": \"{{customerId}}\",\n  \"inputs\": [\"P001-SN001\"]\n}"}, "url": "{{baseUrl}}/product-items/activation-requests" } },
+        { "name": "Activation Requests Get", "request": { "method": "GET", "url": "{{baseUrl}}/product-items/activation-requests/{{id}}" } },
+        { "name": "Activation Requests Approve", "request": { "method": "POST", "url": "{{baseUrl}}/product-items/activation-requests/{{id}}/approve" } },
+        { "name": "Activation Requests Reject", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"reason\": \"Invalid request\"\n}"}, "url": "{{baseUrl}}/product-items/activation-requests/{{id}}/reject" } },
+        { "name": "Sales Orders List", "request": { "method": "GET", "url": "{{baseUrl}}/sales-orders?customerId={{customerId}}&page=0&size=20" } },
+        { "name": "Sales Orders Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"customerId\": {{customerId}},\n  \"items\": []\n}"}, "url": "{{baseUrl}}/sales-orders" } },
+        { "name": "Sales Orders Get", "request": { "method": "GET", "url": "{{baseUrl}}/sales-orders/{{id}}" } },
+        { "name": "Sales Orders Confirm", "request": { "method": "POST", "url": "{{baseUrl}}/sales-orders/{{id}}/confirm" } },
+        { "name": "Sales Orders Cancel", "request": { "method": "POST", "url": "{{baseUrl}}/sales-orders/{{id}}/cancel" } },
+        { "name": "Sales Orders Complete", "request": { "method": "POST", "url": "{{baseUrl}}/sales-orders/{{id}}/complete" } },
+        { "name": "Students List", "request": { "method": "GET", "url": "{{baseUrl}}/students" } },
+        { "name": "Students Public Create", "auth": {"type":"noauth"}, "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Student Test\",\n  \"email\": \"student@example.com\",\n  \"phone\": \"0901234567\"\n}"}, "url": "{{baseUrl}}/public/students" } },
+        { "name": "Students Create", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Student Test\",\n  \"email\": \"student@example.com\",\n  \"phone\": \"0901234567\"\n}"}, "url": "{{baseUrl}}/students" } },
+        { "name": "Students Get", "request": { "method": "GET", "url": "{{baseUrl}}/students/{{id}}" } },
+        { "name": "Students Update", "request": { "method": "PATCH", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Student\"\n}"}, "url": "{{baseUrl}}/students/{{id}}" } },
+        { "name": "Students Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/students/{{id}}" } }
+      ]
+    }
+  ]
+}

@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class RoleAdminService {
@@ -29,7 +31,7 @@ public class RoleAdminService {
     }
 
     @Transactional(readOnly = true)
-    public RoleResponse get(Long id) {
+    public RoleResponse get(UUID id) {
         return toResponse(findRole(id));
     }
 
@@ -45,7 +47,7 @@ public class RoleAdminService {
     }
 
     @Transactional
-    public RoleResponse update(Long id, RoleUpdateRequest request) {
+    public RoleResponse update(UUID id, RoleUpdateRequest request) {
         Role role = findRole(id);
         if (request.getName() != null) role.setName(required(request.getName(), "name cannot be empty"));
         if (request.getDataScope() != null) role.setDataScope(request.getDataScope());
@@ -53,14 +55,14 @@ public class RoleAdminService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(UUID id) {
         Role role = findRole(id);
         if ("admin".equalsIgnoreCase(role.getCode())) throw new AppException("Cannot delete admin role", HttpStatus.CONFLICT, "ROLE_CANNOT_DELETE_ADMIN");
         roleRepository.delete(role);
     }
 
     @Transactional
-    public RoleResponse assignPermission(Long id, AssignPermissionRequest request) {
+    public RoleResponse assignPermission(UUID id, AssignPermissionRequest request) {
         Role role = findRole(id);
         Permission permission = findPermission(request.getPermissionCode());
         role.getPermissions().add(permission);
@@ -68,13 +70,13 @@ public class RoleAdminService {
     }
 
     @Transactional
-    public RoleResponse revokePermission(Long id, String permissionCode) {
+    public RoleResponse revokePermission(UUID id, String permissionCode) {
         Role role = findRole(id);
         role.getPermissions().removeIf(p -> p.getCode().equals(permissionCode));
         return toResponse(role);
     }
 
-    private Role findRole(Long id) {
+    private Role findRole(UUID id) {
         return roleRepository.findById(id).orElseThrow(() -> new AppException("Role not found", HttpStatus.NOT_FOUND, "ROLE_NOT_FOUND"));
     }
 

@@ -8,15 +8,16 @@ import lombok.Getter;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 public class UserPermissionInfo {
-    private Long accountId;
+    private UUID accountId;
     private Set<Role> roles;
     private Set<Permission> permissions;
     private DataScope dataScope;
-    private List<Long> organizationIds;
+    private List<UUID> organizationIds;
 
     public boolean hasPermission(String code) {
         return permissions.stream().anyMatch(p -> p.getCode().equals(code));

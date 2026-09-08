@@ -6,21 +6,22 @@ import lombok.Getter;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class ProductItemLogResponse {
 
-    private Long id;
+    private UUID id;
 
     @JsonProperty("product_item_id")
-    private Long productItemId;
+    private UUID productItemId;
 
     @JsonProperty("event_type")
     private String eventType;
 
     @JsonProperty("actor_id")
-    private Long actorId;
+    private UUID actorId;
 
     @JsonProperty("actor_role")
     private String actorRole;
@@ -28,7 +29,7 @@ public class ProductItemLogResponse {
     private String source;
 
     @JsonProperty("customer_id")
-    private String customerId;
+    private UUID customerId;
 
     private Map<String, Object> metadata;
 

@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/keygen")
@@ -22,30 +23,30 @@ public class KeyGenController {
     @PostMapping("/factory")
     public ApiResponse<GenerateFactoryResponse> generateFactory(@Valid @RequestBody GenerateFactoryRequest request,
                                                                 @AuthenticationPrincipal AccountPrincipal principal) {
-        Long userId = principal == null ? null : principal.getId();
+        UUID userId = principal == null ? null : principal.getId();
         return ApiResponse.ok(keyGenService.generateFactory(request, userId), null);
     }
 
     @PostMapping("/active")
     public ApiResponse<GenerateActiveResponse> generateActive(@Valid @RequestBody GenerateActiveRequest request,
                                                               @AuthenticationPrincipal AccountPrincipal principal) {
-        Long userId = principal == null ? null : principal.getId();
+        UUID userId = principal == null ? null : principal.getId();
         return ApiResponse.ok(keyGenService.generateActive(request, userId), null);
     }
 
     @PostMapping("/machine-lock")
     public ApiResponse<GenerateMachineLockResponse> generateMachineLock(@Valid @RequestBody GenerateMachineLockRequest request,
                                                                         @AuthenticationPrincipal AccountPrincipal principal) {
-        Long userId = principal == null ? null : principal.getId();
+        UUID userId = principal == null ? null : principal.getId();
         return ApiResponse.ok(keyGenService.generateMachineLock(request, userId), null);
     }
 
     @GetMapping("/history")
     public ApiResponse<KeyGenHistoryListResponse> listHistory(
             @RequestParam(name = "key_type", required = false) String keyType,
-            @RequestParam(name = "generated_by", required = false) Long generatedBy,
+            @RequestParam(name = "generated_by", required = false) UUID generatedBy,
             @RequestParam(name = "organization_id", required = false) String organizationId,
-            @RequestParam(name = "product_item_id", required = false) Long productItemId,
+            @RequestParam(name = "product_item_id", required = false) UUID productItemId,
             @RequestParam(name = "date_from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
             @RequestParam(name = "date_to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateTo,
             @RequestParam(defaultValue = "50") int limit,

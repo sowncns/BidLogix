@@ -7,12 +7,13 @@ import lombok.Getter;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 @Getter
 @Builder
 @AllArgsConstructor
 public class ProductResponse {
-    private Long id;
+    private UUID id;
     private String code;
     private String name;
     private Map<String, Object> specifications;

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "activation_requests")
@@ -20,10 +21,10 @@ public class ActivationRequest {
     private String requestType = "activation";
 
     @Column(nullable = false)
-    private Long salesUserId;
+    private UUID salesUserId;
 
     @Column(nullable = false)
-    private String customerId;
+    private UUID customerId;
 
     private String organizationId;
 
@@ -43,7 +44,7 @@ public class ActivationRequest {
     @Column(nullable = false, updatable = false)
     private Instant submittedAt = Instant.now();
 
-    private Long reviewedBy;
+    private UUID reviewedBy;
     private Instant reviewedAt;
 
     @Column(nullable = false, updatable = false)

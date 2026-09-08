@@ -16,6 +16,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -55,17 +56,17 @@ public class OrganizationService {
     }
 
     @Transactional(readOnly = true)
-    public OrganizationResponse getResponseById(Long id) {
+    public OrganizationResponse getResponseById(UUID id) {
         return toResponse(getById(id));
     }
 
-    public Organization getById(Long id) {
+    public Organization getById(UUID id) {
         return organizationRepository.findById(id)
                 .orElseThrow(() -> new AppException("Tổ chức không tồn tại", HttpStatus.NOT_FOUND, "ORGANIZATION_NOT_FOUND"));
     }
 
     @Transactional
-    public OrganizationResponse update(Long id, OrganizationUpdateRequest request) {
+    public OrganizationResponse update(UUID id, OrganizationUpdateRequest request) {
         Organization org = getById(id);
         if (request.getCode() != null) org.setCode(required(request.getCode(), "code cannot be empty"));
         if (request.getName() != null) org.setName(required(request.getName(), "name cannot be empty"));
@@ -83,7 +84,7 @@ public class OrganizationService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(UUID id) {
         Organization org = getById(id);
         org.setStatus("inactive");
         org.setActive(false);
@@ -91,13 +92,13 @@ public class OrganizationService {
     }
 
     // Includes the organization itself. Backs the ORGANIZATION_AND_CHILDREN data scope.
-    public Set<Long> getSelfAndDescendantIds(Long organizationId) {
-        Set<Long> ids = new HashSet<>();
-        Deque<Long> queue = new ArrayDeque<>();
+    public Set<UUID> getSelfAndDescendantIds(UUID organizationId) {
+        Set<UUID> ids = new HashSet<>();
+        Deque<UUID> queue = new ArrayDeque<>();
         queue.add(organizationId);
 
         while (!queue.isEmpty()) {
-            Long current = queue.poll();
+            UUID current = queue.poll();
             if (!ids.add(current)) {
                 continue;
             }

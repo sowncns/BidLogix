@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "product_items")
@@ -13,16 +14,16 @@ import java.time.Instant;
 public class ProductItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false, unique = true, length = 100)
     private String code;
 
     @Column(nullable = false)
-    private Long productId;
+    private UUID productId;
 
-    private String customerId;
+    private UUID customerId;
 
     private Instant manufacturingDate;
     private Instant installationDate;
@@ -32,7 +33,7 @@ public class ProductItem {
     private String status = "stock";
 
     private Instant activatedAt;
-    private Long activatedBy;
+    private UUID activatedBy;
     private String activationNotes;
 
     private Instant recalledAt;

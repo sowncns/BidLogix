@@ -17,13 +17,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
 
-    public void log(Long actorId, String actorUsername, String action, String targetType, String targetId, String detail) {
+    public void log(UUID actorId, String actorUsername, String action, String targetType, String targetId, String detail) {
         AuditLog entry = new AuditLog();
         entry.setActorId(actorId);
         entry.setActorUsername(actorUsername);

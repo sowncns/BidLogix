@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class PermissionService {
     private final AccountRepository accountRepository;
     private final AccountOrganizationRepository accountOrganizationRepository;
 
-    public UserPermissionInfo getUserPermissionInfo(Long accountId) {
+    public UserPermissionInfo getUserPermissionInfo(UUID accountId) {
         AuthUser account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AppException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
 
@@ -36,14 +37,14 @@ public class PermissionService {
             effectiveScope = DataScope.mostPermissive(effectiveScope, role.getDataScope());
         }
 
-        List<Long> organizationIds = accountOrganizationRepository.findByAccountId(accountId).stream()
+        List<UUID> organizationIds = accountOrganizationRepository.findByAccountId(accountId).stream()
                 .map(AccountOrganization::getOrganizationId)
                 .toList();
 
         return new UserPermissionInfo(accountId, roles, permissions, effectiveScope, organizationIds);
     }
 
-    public boolean hasPermission(Long accountId, String permissionCode) {
+    public boolean hasPermission(UUID accountId, String permissionCode) {
         return getUserPermissionInfo(accountId).hasPermission(permissionCode);
     }
 }

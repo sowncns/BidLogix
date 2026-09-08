@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class WorkOrderCommentService {
     }
 
     @Transactional
-    public WorkOrderCommentResponse create(String workOrderId, WorkOrderCommentCreateRequest request, Long authorId) {
+    public WorkOrderCommentResponse create(String workOrderId, WorkOrderCommentCreateRequest request, UUID authorId) {
         ensureWorkOrderExists(workOrderId);
         if (authorId == null) throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
         WorkOrderComment comment = new WorkOrderComment();
@@ -46,7 +47,7 @@ public class WorkOrderCommentService {
     }
 
     @Transactional
-    public WorkOrderCommentResponse update(String id, WorkOrderCommentUpdateRequest request, Long actorId) {
+    public WorkOrderCommentResponse update(String id, WorkOrderCommentUpdateRequest request, UUID actorId) {
         WorkOrderComment comment = findOrThrow(id);
         ensureAuthor(comment, actorId);
         comment.setContent(normalizeContent(request.getContent()));
@@ -55,7 +56,7 @@ public class WorkOrderCommentService {
     }
 
     @Transactional
-    public void delete(String id, Long actorId) {
+    public void delete(String id, UUID actorId) {
         WorkOrderComment comment = findOrThrow(id);
         ensureAuthor(comment, actorId);
         comment.setDeletedAt(Instant.now());
@@ -72,7 +73,7 @@ public class WorkOrderCommentService {
         return workOrderCommentRepository.findByIdAndDeletedAtIsNull(id).orElseThrow(() -> new AppException("Work order comment not found", HttpStatus.NOT_FOUND, "WORK_ORDER_COMMENT_NOT_FOUND"));
     }
 
-    private void ensureAuthor(WorkOrderComment comment, Long actorId) {
+    private void ensureAuthor(WorkOrderComment comment, UUID actorId) {
         if (actorId == null) throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
         if (!comment.getAuthorId().equals(String.valueOf(actorId))) throw new AppException("Forbidden", HttpStatus.FORBIDDEN, "WORK_ORDER_COMMENT_FORBIDDEN");
     }

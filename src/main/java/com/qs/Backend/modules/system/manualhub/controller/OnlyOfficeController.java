@@ -30,4 +30,9 @@ public class OnlyOfficeController {
     public Map<String, Object> callback(@PathVariable Long id, @RequestBody OnlyOfficeCallbackRequest body) {
         return onlyOfficeService.handleCallback(id, body);
     }
+
+    @PostMapping("/manualhub/documents/{id}/onlyoffice-forcesave")
+    public ApiResponse<Map<String, String>> forceSave(@PathVariable Long id) {
+        return ApiResponse.ok(onlyOfficeService.forceSave(id), null);
+    }
 }

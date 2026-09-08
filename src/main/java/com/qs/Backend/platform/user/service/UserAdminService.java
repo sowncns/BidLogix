@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 // Ports qs-crm's internal/core/user (+ its profile/role/organization aggregation done at the
@@ -50,7 +51,7 @@ public class UserAdminService {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public UserResponse create(UserCreateRequest request, Long performedBy) {
+    public UserResponse create(UserCreateRequest request, UUID performedBy) {
         UserRequestValidator.normalize(request);
 
         String username = request.getEmail() != null && !request.getEmail().isEmpty() ? request.getEmail() : request.getPhone();
@@ -82,7 +83,7 @@ public class UserAdminService {
     }
 
     @Transactional
-    public UserResponse update(Long id, UserUpdateRequest request, Long performedBy) {
+    public UserResponse update(UUID id, UserUpdateRequest request, UUID performedBy) {
         UserRequestValidator.normalize(request);
 
         AuthUser account = findOrThrow(id);
@@ -114,7 +115,7 @@ public class UserAdminService {
     }
 
     @Transactional
-    public void changePassword(Long id, UserChangePasswordRequest request, Long performedBy) {
+    public void changePassword(UUID id, UserChangePasswordRequest request, UUID performedBy) {
         UserRequestValidator.validateNewPassword(request.getNewPassword(), request.getConfirmPassword());
 
         AuthUser account = findOrThrow(id);
@@ -126,7 +127,7 @@ public class UserAdminService {
     }
 
     @Transactional
-    public UserResponse updateEmailNotifications(Long id, UpdateEmailNotificationsRequest prefs) {
+    public UserResponse updateEmailNotifications(UUID id, UpdateEmailNotificationsRequest prefs) {
         AuthUser account = findOrThrow(id);
 
         if (prefs.getActivationRequest() != null) {
@@ -146,7 +147,7 @@ public class UserAdminService {
     }
 
     @Transactional
-    public void delete(Long id, Long currentUserId) {
+    public void delete(UUID id, UUID currentUserId) {
         if (id.equals(currentUserId)) {
             throw new AppException("Không thể tự xóa chính mình", HttpStatus.BAD_REQUEST, "USER_SELF_DELETE");
         }
@@ -159,7 +160,7 @@ public class UserAdminService {
     }
 
     @Transactional(readOnly = true)
-    public UserResponse getById(Long id) {
+    public UserResponse getById(UUID id) {
         return toResponse(findOrThrow(id));
     }
 
@@ -185,19 +186,19 @@ public class UserAdminService {
 
     // ---- Internal helpers ----
 
-    private AuthUser findOrThrow(Long id) {
+    private AuthUser findOrThrow(UUID id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new AppException("Tài khoản không tồn tại", HttpStatus.NOT_FOUND, "USER_NOT_FOUND"));
     }
 
-    private Set<Role> resolveRoles(List<Long> roleIds) {
+    private Set<Role> resolveRoles(List<UUID> roleIds) {
         if (roleIds == null || roleIds.isEmpty()) {
             return new HashSet<>();
         }
         return new HashSet<>(roleRepository.findAllById(roleIds));
     }
 
-    private void assignOrganization(Long accountId, Long organizationId) {
+    private void assignOrganization(UUID accountId, UUID organizationId) {
         if (accountOrganizationRepository.existsByAccountIdAndOrganizationId(accountId, organizationId)) {
             return;
         }
@@ -252,7 +253,7 @@ public class UserAdminService {
                 .distinct()
                 .map((Permission p) -> new PermissionInfo(p.getId(), p.getCode(), p.getDescription()))
                 .toList();
-        Long organizationId = accountOrganizationRepository.findByAccountId(account.getId()).stream()
+        UUID organizationId = accountOrganizationRepository.findByAccountId(account.getId()).stream()
                 .findFirst()
                 .map(AccountOrganization::getOrganizationId)
                 .orElse(null);

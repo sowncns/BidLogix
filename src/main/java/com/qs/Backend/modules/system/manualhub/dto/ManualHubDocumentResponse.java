@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 // Field names are explicit @JsonProperty (not a naming strategy) because
 // Lombok's isXxx()-style boolean getters otherwise get stripped to "xxx" by
@@ -24,7 +25,7 @@ public class ManualHubDocumentResponse {
     private Long parentId;
 
     @JsonProperty("product_id")
-    private Long productId;
+    private UUID productId;
 
     @JsonProperty("product_name")
     private String productName;

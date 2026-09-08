@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 // Logical link only (no FK to a business "organization" table, which doesn't exist yet).
 @Entity
 @Table(name = "account_organizations")
@@ -16,8 +18,8 @@ public class AccountOrganization {
     private Long id;
 
     @Column(name = "account_id", nullable = false)
-    private Long accountId;
+    private UUID accountId;
 
     @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
+    private UUID organizationId;
 }

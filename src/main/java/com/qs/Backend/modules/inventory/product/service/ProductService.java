@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +48,7 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public ProductResponse getProduct(Long id) {
+    public ProductResponse getProduct(UUID id) {
         return toResponse(findActiveOrThrow(id));
     }
 
@@ -60,7 +61,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse updateProduct(Long id, ProductUpdateRequest request) {
+    public ProductResponse updateProduct(UUID id, ProductUpdateRequest request) {
         Product product = findActiveOrThrow(id);
         if (request.getName() != null) product.setName(normalizeRequired(request.getName(), "name is required"));
         if (request.getSpecifications() != null) product.setSpecifications(request.getSpecifications());
@@ -70,12 +71,12 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse adjustStock(Long id, int delta) {
+    public ProductResponse adjustStock(UUID id, int delta) {
         return getProduct(id);
     }
 
     @Transactional
-    public void deactivateProduct(Long id) {
+    public void deactivateProduct(UUID id) {
         Product product = findActiveOrThrow(id);
         product.setActive(false);
         product.setDeletedAt(Instant.now());
@@ -94,7 +95,7 @@ public class ProductService {
         };
     }
 
-    private Product findActiveOrThrow(Long id) {
+    private Product findActiveOrThrow(UUID id) {
         return productRepository.findById(id).filter(p -> p.getDeletedAt() == null).orElseThrow(() -> new AppException("Product not found", HttpStatus.NOT_FOUND, "INVENTORY_PRODUCT_NOT_FOUND"));
     }
 

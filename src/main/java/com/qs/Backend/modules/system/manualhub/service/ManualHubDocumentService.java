@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -41,13 +42,13 @@ public class ManualHubDocumentService {
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
-    public ManualHubDocumentListResponse list(String keyword, String status, Long productId, Long parentId,
+    public ManualHubDocumentListResponse list(String keyword, String status, UUID productId, Long parentId,
                                                boolean mine, int limit, int offset) {
         
         int pageSize = limit > 0 ? limit : 20;
         int page = offset > 0 ? offset / pageSize : 0;
         
-        Long authorId = mine ? currentUserId() : null;
+        UUID authorId = mine ? currentUserId() : null;
         Page<ManualHubDocument> result = documentRepository.search(
                 blankToNull(keyword), blankToNull(status), productId, parentId, authorId,
                 PageRequest.of(page, pageSize));
@@ -282,7 +283,7 @@ public class ManualHubDocumentService {
         activityRepository.save(activity);
     }
 
-    private String productName(Long productId) {
+    private String productName(UUID productId) {
         if (productId == null) return null;
         return productRepository.findById(productId).map(Product::getName).orElse(null);
     }
@@ -360,7 +361,7 @@ public class ManualHubDocumentService {
         return (s == null || s.isBlank()) ? null : s;
     }
 
-    private Long currentUserId() {
+    private java.util.UUID currentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal() : null;
         return principal instanceof AccountPrincipal ap ? ap.getId() : null;

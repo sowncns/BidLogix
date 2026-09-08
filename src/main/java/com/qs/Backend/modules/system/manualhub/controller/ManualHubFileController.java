@@ -18,7 +18,7 @@ public class ManualHubFileController {
 
     private final ManualHubFileService fileService;
 
-    @PostMapping("/manualhub/documents/{id}/images")
+    @PostMapping({"/manualhub/documents/{id}/images", "/manualhub/documents/{id}/files"})
     public ApiResponse<UploadFileResponse> upload(@PathVariable Long id, @RequestParam("files") MultipartFile files) {
         return ApiResponse.created(fileService.upload(id, files), "Đã tải file lên");
     }

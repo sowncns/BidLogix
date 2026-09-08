@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +45,7 @@ public class KeyGenService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public GenerateFactoryResponse generateFactory(GenerateFactoryRequest request, Long userId) {
+    public GenerateFactoryResponse generateFactory(GenerateFactoryRequest request, UUID userId) {
         requireUser(userId);
         validateTime(request);
         List<FactoryPasswordResponse> passwords = new ArrayList<>();
@@ -71,17 +72,17 @@ public class KeyGenService {
     }
 
     @Transactional
-    public GenerateActiveResponse generateActive(GenerateActiveRequest request, Long userId) {
+    public GenerateActiveResponse generateActive(GenerateActiveRequest request, UUID userId) {
         return new GenerateActiveResponse(generateActivePassword(request.getInput(), userId, null, null));
     }
 
     @Transactional
-    public String generateActiveWithItemId(String input, Long userId, Long productItemId, String reason) {
+    public String generateActiveWithItemId(String input, UUID userId, UUID productItemId, String reason) {
         return generateActivePassword(input, userId, productItemId, reason);
     }
 
     @Transactional
-    public GenerateMachineLockResponse generateMachineLock(GenerateMachineLockRequest request, Long userId) {
+    public GenerateMachineLockResponse generateMachineLock(GenerateMachineLockRequest request, UUID userId) {
         requireUser(userId);
         String input = normalizeInput(request.getInput());
         String password = normalizeInput(request.getPassword());
@@ -93,7 +94,7 @@ public class KeyGenService {
                 .years2(generatePassword(generateMachineLockInput(input, DURATION_PRIVATE_KEYS.get("years_2"), password)))
                 .infinity(generatePassword(generateMachineLockInput(input, DURATION_PRIVATE_KEYS.get("infinity"), password)))
                 .build();
-        Long productItemId = resolveProductItemId(input);
+        UUID productItemId = resolveProductItemId(input);
         saveHistory("machine_lock", Map.of("input", input, "password", password), Map.of(
                 "week", keys.getWeek(),
                 "days_30", keys.getDays30(),
@@ -107,7 +108,7 @@ public class KeyGenService {
     }
 
     @Transactional(readOnly = true)
-    public KeyGenHistoryListResponse listHistory(String keyType, Long generatedBy, String organizationId, Long productItemId,
+    public KeyGenHistoryListResponse listHistory(String keyType, UUID generatedBy, String organizationId, UUID productItemId,
                                                  Instant dateFrom, Instant dateTo, int limit, int offset) {
         int safeLimit = Math.max(1, Math.min(limit, 200));
         int safeOffset = Math.max(0, offset);
@@ -121,11 +122,11 @@ public class KeyGenService {
                 .build();
     }
 
-    private String generateActivePassword(String input, Long userId, Long knownProductItemId, String reason) {
+    private String generateActivePassword(String input, UUID userId, UUID knownProductItemId, String reason) {
         requireUser(userId);
         String normalized = normalizeInput(input);
         String password = generatePassword(normalized);
-        Long productItemId = knownProductItemId != null ? knownProductItemId : resolveProductItemId(normalized);
+        UUID productItemId = knownProductItemId != null ? knownProductItemId : resolveProductItemId(normalized);
         Map<String, Object> inputData = new LinkedHashMap<>();
         inputData.put("input", normalized);
         if (reason != null && !reason.isBlank()) {
@@ -137,7 +138,7 @@ public class KeyGenService {
     }
 
     private void saveHistory(String keyType, Map<String, Object> inputData, Map<String, Object> outputData,
-                             Long generatedBy, String organizationId, Long productItemId) {
+                              UUID generatedBy, String organizationId, UUID productItemId) {
         KeyGen history = new KeyGen();
         history.setKeyType(keyType);
         history.setInputData(writeJson(inputData));
@@ -177,7 +178,7 @@ public class KeyGenService {
         return input + "-" + privateKey + "-" + password;
     }
 
-    private Long resolveProductItemId(String input) {
+    private UUID resolveProductItemId(String input) {
         String code = extractDeviceCode(input);
         if (code.isBlank()) {
             return null;
@@ -192,13 +193,13 @@ public class KeyGenService {
         return idx > 0 ? input.substring(0, idx) : input;
     }
 
-    private void logKeygen(Long productItemId, String keyType, Long userId) {
+    private void logKeygen(UUID productItemId, String keyType, UUID userId) {
         if (productItemId != null) {
             productItemLogService.log(productItemId, "keygen", userId, "direct", null, "{\"key_type\":\"" + keyType + "\"}");
         }
     }
 
-    private Specification<KeyGen> spec(String keyType, Long generatedBy, String organizationId, Long productItemId,
+    private Specification<KeyGen> spec(String keyType, UUID generatedBy, String organizationId, UUID productItemId,
                                        Instant dateFrom, Instant dateTo) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -244,7 +245,7 @@ public class KeyGenService {
         }
     }
 
-    private void requireUser(Long userId) {
+    private void requireUser(UUID userId) {
         if (userId == null) {
             throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
         }

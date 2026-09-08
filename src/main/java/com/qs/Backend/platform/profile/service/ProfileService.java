@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,18 +27,18 @@ public class ProfileService {
     private final StoredFileRepository storedFileRepository;
 
     @Transactional(readOnly = true)
-    public ProfileResponse getMe(Long userId) {
+    public ProfileResponse getMe(UUID userId) {
         requireUser(userId);
         return toResponse(getOrEmpty(userId));
     }
 
     @Transactional(readOnly = true)
-    public ProfileResponse getByUserId(Long userId) {
+    public ProfileResponse getByUserId(UUID userId) {
         requireUser(userId);
         return toResponse(getOrEmpty(userId));
     }
 
-    public Profile getOrEmpty(Long userId) {
+    public Profile getOrEmpty(UUID userId) {
         return profileRepository.findByUserId(userId).orElseGet(() -> {
             Profile empty = new Profile();
             empty.setUserId(userId);
@@ -46,7 +47,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public ProfileResponse updateMe(Long userId, ProfileUpdateRequest request) {
+    public ProfileResponse updateMe(UUID userId, ProfileUpdateRequest request) {
         requireUser(userId);
         Profile profile = upsert(userId, request.getFirstName(), request.getLastName(), request.getAvatarUrl());
         if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));
@@ -55,7 +56,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public ProfileResponse updateByUserId(Long userId, ProfileUpdateRequest request) {
+    public ProfileResponse updateByUserId(UUID userId, ProfileUpdateRequest request) {
         requireUser(userId);
         Profile profile = upsert(userId, request.getFirstName(), request.getLastName(), request.getAvatarUrl());
         if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));
@@ -64,7 +65,7 @@ public class ProfileService {
     }
 
     @Transactional
-    public ProfileResponse uploadAvatar(Long userId, MultipartFile file, Long uploadedBy) {
+    public ProfileResponse uploadAvatar(UUID userId, MultipartFile file, UUID uploadedBy) {
         requireUser(userId);
         String storageKey = fileStorageService.storeFile(file, "avatars/" + userId);
         StoredFile storedFile = new StoredFile();
@@ -83,7 +84,7 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public StoredFile findAvatarFile(Long userId, String fileId) {
+    public StoredFile findAvatarFile(UUID userId, String fileId) {
         requireUser(userId);
         StoredFile storedFile = storedFileRepository.findById(fileId)
                 .orElseThrow(() -> new AppException("Không tìm thấy avatar", HttpStatus.NOT_FOUND, "AVATAR_NOT_FOUND"));
@@ -99,7 +100,7 @@ public class ProfileService {
     }
 
     // Create-or-update: mirrors qs-crm's "get or create profile" flow on user update.
-    public Profile upsert(Long userId, String firstName, String lastName, String avatarUrl) {
+    public Profile upsert(UUID userId, String firstName, String lastName, String avatarUrl) {
         Profile profile = profileRepository.findByUserId(userId).orElseGet(() -> {
             Profile created = new Profile();
             created.setUserId(userId);
@@ -116,7 +117,7 @@ public class ProfileService {
         return ProfileResponse.builder().id(profile.getId()).userId(profile.getUserId()).firstName(profile.getFirstName()).lastName(profile.getLastName()).avatarUrl(profile.getAvatarUrl()).region(profile.getRegion()).createdAt(profile.getCreatedAt()).updatedAt(profile.getUpdatedAt()).build();
     }
 
-    private void requireUser(Long userId) {
+    private void requireUser(UUID userId) {
         if (userId == null) throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
     }
 

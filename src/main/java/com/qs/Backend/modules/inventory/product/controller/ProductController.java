@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ProductResponse> get(@PathVariable Long id) {
+    public ApiResponse<ProductResponse> get(@PathVariable UUID id) {
         return ApiResponse.ok(productService.getProduct(id), null);
     }
 
@@ -36,17 +38,17 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<ProductResponse> update(@PathVariable Long id, @Valid @RequestBody ProductUpdateRequest request) {
+    public ApiResponse<ProductResponse> update(@PathVariable UUID id, @Valid @RequestBody ProductUpdateRequest request) {
         return ApiResponse.ok(productService.updateProduct(id, request), "Product updated");
     }
 
     @PatchMapping("/{id}/stock")
-    public ApiResponse<ProductResponse> adjustStock(@PathVariable Long id, @Valid @RequestBody StockAdjustRequest request) {
+    public ApiResponse<ProductResponse> adjustStock(@PathVariable UUID id, @Valid @RequestBody StockAdjustRequest request) {
         return ApiResponse.ok(productService.adjustStock(id, request.getDelta()), "Stock adjusted");
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deactivate(@PathVariable Long id) {
+    public ApiResponse<Void> deactivate(@PathVariable UUID id) {
         productService.deactivateProduct(id);
         return ApiResponse.ok(null, "Product deactivated");
     }

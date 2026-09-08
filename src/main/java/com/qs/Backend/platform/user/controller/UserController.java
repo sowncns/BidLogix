@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -44,27 +45,27 @@ public class UserController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_MANAGE')")
-    public ApiResponse<UserResponse> get(@PathVariable Long id) {
+    public ApiResponse<UserResponse> get(@PathVariable UUID id) {
         return ApiResponse.ok(userAdminService.getById(id), null);
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_MANAGE')")
-    public ApiResponse<UserResponse> update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request,
+    public ApiResponse<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest request,
                                              @AuthenticationPrincipal AccountPrincipal principal) {
         return ApiResponse.ok(userAdminService.update(id, request, principal.getId()), "User updated");
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_MANAGE')")
-    public ApiResponse<Void> delete(@PathVariable Long id, @AuthenticationPrincipal AccountPrincipal principal) {
+    public ApiResponse<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal AccountPrincipal principal) {
         userAdminService.delete(id, principal.getId());
         return ApiResponse.ok(null, "User deactivated");
     }
 
     @PostMapping("/{id}/change-password")
     @PreAuthorize("hasAuthority('USER_MANAGE')")
-    public ApiResponse<Void> changePassword(@PathVariable Long id, @Valid @RequestBody UserChangePasswordRequest request,
+    public ApiResponse<Void> changePassword(@PathVariable UUID id, @Valid @RequestBody UserChangePasswordRequest request,
                                              @AuthenticationPrincipal AccountPrincipal principal) {
         userAdminService.changePassword(id, request, principal.getId());
         return ApiResponse.ok(null, "Password changed");
@@ -72,7 +73,7 @@ public class UserController {
 
     @PatchMapping("/{id}/email-notifications")
     @PreAuthorize("hasAuthority('USER_MANAGE')")
-    public ApiResponse<UserResponse> updateEmailNotifications(@PathVariable Long id, @RequestBody UpdateEmailNotificationsRequest request) {
+    public ApiResponse<UserResponse> updateEmailNotifications(@PathVariable UUID id, @RequestBody UpdateEmailNotificationsRequest request) {
         return ApiResponse.ok(userAdminService.updateEmailNotifications(id, request), null);
     }
 

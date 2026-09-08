@@ -5,15 +5,16 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class OrganizationResponse {
-    private Long id;
+    private UUID id;
     private String code;
     private String name;
     @JsonProperty("parent_id")
-    private Long parentId;
+    private UUID parentId;
     private String path;
     private Integer level;
     private String status;

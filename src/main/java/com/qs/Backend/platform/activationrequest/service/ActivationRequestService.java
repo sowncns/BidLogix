@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,9 +35,9 @@ public class ActivationRequestService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public ActivationRequestResponse submit(ActivationRequestSubmitRequest request, Long userId) {
+    public ActivationRequestResponse submit(ActivationRequestSubmitRequest request, UUID userId) {
         requireUser(userId);
-        if (!customerRepository.existsById(request.getCustomerId())) {
+        if (!customerRepository.existsById(request.getCustomerId().toString())) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
         }
         String requestType = request.getRequestType() == null || request.getRequestType().isBlank()
@@ -79,7 +80,7 @@ public class ActivationRequestService {
     }
 
     @Transactional
-    public ActivationRequestResponse approve(Long id, Long reviewerId) {
+    public ActivationRequestResponse approve(Long id, UUID reviewerId) {
         requireUser(reviewerId);
         ActivationRequest entity = findOrThrow(id);
         ensurePending(entity);
@@ -99,7 +100,7 @@ public class ActivationRequestService {
     }
 
     @Transactional
-    public ActivationRequestResponse reject(Long id, Long reviewerId, ActivationRequestRejectRequest request) {
+    public ActivationRequestResponse reject(Long id, UUID reviewerId, ActivationRequestRejectRequest request) {
         requireUser(reviewerId);
         ActivationRequest entity = findOrThrow(id);
         ensurePending(entity);
@@ -132,7 +133,7 @@ public class ActivationRequestService {
         }
     }
 
-    private void requireUser(Long userId) {
+    private void requireUser(UUID userId) {
         if (userId == null) {
             throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
         }

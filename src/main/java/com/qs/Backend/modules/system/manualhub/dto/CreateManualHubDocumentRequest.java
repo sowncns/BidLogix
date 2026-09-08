@@ -6,13 +6,15 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 public class CreateManualHubDocumentRequest {
 
     @NotNull
     @JsonProperty("product_id")
-    private Long productId;
+    private UUID productId;
 
     @JsonProperty("parent_id")
     private Long parentId;

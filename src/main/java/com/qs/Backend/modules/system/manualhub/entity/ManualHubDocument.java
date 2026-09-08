@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "manualhub_documents")
@@ -22,7 +23,7 @@ public class ManualHubDocument {
     private Long parentId;
 
     @Column(name = "product_id", nullable = false)
-    private Long productId;
+    private UUID productId;
 
     @Column(nullable = false)
     private String title;
@@ -47,7 +48,7 @@ public class ManualHubDocument {
     private String version = "1";
 
     @Column(name = "author_id")
-    private Long authorId;
+    private UUID authorId;
 
     @Column(name = "author_name")
     private String authorName;

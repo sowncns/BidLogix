@@ -3,10 +3,11 @@ package com.qs.Backend.platform.logging.audit.dto;
 import com.qs.Backend.platform.logging.audit.entity.AuditLog;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public record AuditLogResponse(
         Long id,
-        Long actorId,
+        UUID actorId,
         String actorUsername,
         String action,
         String targetType,

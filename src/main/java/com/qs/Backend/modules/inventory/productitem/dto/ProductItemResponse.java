@@ -5,19 +5,20 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class ProductItemResponse {
 
-    private Long id;
+    private UUID id;
     private String code;
 
     @JsonProperty("product_id")
-    private Long productId;
+    private UUID productId;
 
     @JsonProperty("customer_id")
-    private String customerId;
+    private UUID customerId;
 
     @JsonProperty("manufacturing_date")
     private Instant manufacturingDate;
@@ -34,7 +35,7 @@ public class ProductItemResponse {
     private Instant activatedAt;
 
     @JsonProperty("activated_by")
-    private Long activatedBy;
+    private UUID activatedBy;
 
     @JsonProperty("activation_notes")
     private String activationNotes;

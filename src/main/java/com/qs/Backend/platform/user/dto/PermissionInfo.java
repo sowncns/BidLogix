@@ -1,4 +1,6 @@
 package com.qs.Backend.platform.user.dto;
 
-public record PermissionInfo(Long id, String code, String description) {
+import java.util.UUID;
+
+public record PermissionInfo(UUID id, String code, String description) {
 }

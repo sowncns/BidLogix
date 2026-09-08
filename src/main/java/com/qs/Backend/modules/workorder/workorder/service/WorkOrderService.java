@@ -18,6 +18,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class WorkOrderService {
     }
 
     @Transactional
-    public WorkOrderResponse create(WorkOrderCreateRequest request, Long createdBy) {
+    public WorkOrderResponse create(WorkOrderCreateRequest request, UUID createdBy) {
         validateType(request.getType());
         String priority = request.getPriority() == null || request.getPriority().isBlank() ? "normal" : request.getPriority().trim();
         validatePriority(priority);

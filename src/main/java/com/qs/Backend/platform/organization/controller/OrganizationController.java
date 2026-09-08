@@ -23,17 +23,17 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<OrganizationResponse> get(@PathVariable Long id) {
+    public ApiResponse<OrganizationResponse> get(@PathVariable java.util.UUID id) {
         return ApiResponse.ok(organizationService.getResponseById(id), null);
     }
 
     @PatchMapping("/{id}")
-    public ApiResponse<OrganizationResponse> update(@PathVariable Long id, @RequestBody OrganizationUpdateRequest request) {
+    public ApiResponse<OrganizationResponse> update(@PathVariable java.util.UUID id, @RequestBody OrganizationUpdateRequest request) {
         return ApiResponse.ok(organizationService.update(id, request), "Organization updated");
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable java.util.UUID id) {
         organizationService.delete(id);
         return ApiResponse.ok(null, "Organization deleted");
     }

@@ -34,4 +34,15 @@ public class ProfileController {
         authService.changePassword(principal.getId(), request);
         return ApiResponse.ok(null, "Đổi mật khẩu thành công");
     }
+
+    @GetMapping("/users/{id}/profile")
+    public ApiResponse<ProfileResponse> getUserProfile(@PathVariable Long id) {
+        return ApiResponse.ok(profileService.getByUserId(id), null);
+    }
+
+    @PatchMapping("/users/{id}/profile")
+    public ApiResponse<ProfileResponse> updateUserProfile(@PathVariable Long id,
+                                                          @RequestBody ProfileUpdateRequest request) {
+        return ApiResponse.ok(profileService.updateByUserId(id, request), "Profile updated");
+    }
 }

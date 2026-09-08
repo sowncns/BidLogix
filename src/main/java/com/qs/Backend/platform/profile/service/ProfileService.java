@@ -24,6 +24,12 @@ public class ProfileService {
         return toResponse(getOrEmpty(userId));
     }
 
+    @Transactional(readOnly = true)
+    public ProfileResponse getByUserId(Long userId) {
+        requireUser(userId);
+        return toResponse(getOrEmpty(userId));
+    }
+
     public Profile getOrEmpty(Long userId) {
         return profileRepository.findByUserId(userId).orElseGet(() -> {
             Profile empty = new Profile();
@@ -34,6 +40,15 @@ public class ProfileService {
 
     @Transactional
     public ProfileResponse updateMe(Long userId, ProfileUpdateRequest request) {
+        requireUser(userId);
+        Profile profile = upsert(userId, request.getFirstName(), request.getLastName(), request.getAvatarUrl());
+        if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));
+        profile.setUpdatedAt(Instant.now());
+        return toResponse(profileRepository.save(profile));
+    }
+
+    @Transactional
+    public ProfileResponse updateByUserId(Long userId, ProfileUpdateRequest request) {
         requireUser(userId);
         Profile profile = upsert(userId, request.getFirstName(), request.getLastName(), request.getAvatarUrl());
         if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));

@@ -5,8 +5,10 @@ import com.qs.Backend.platform.logging.audit.dto.AuditLogSearchRequest;
 import com.qs.Backend.platform.logging.audit.entity.AuditLog;
 import com.qs.Backend.platform.logging.audit.repository.AuditLogRepository;
 import com.qs.Backend.platform.logging.system.RequestLoggingConstants;
+import com.qs.Backend.shared.exception.AppException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +39,12 @@ public class AuditLogService {
     public Page<AuditLogResponse> search(AuditLogSearchRequest filter, Pageable pageable) {
         return auditLogRepository.findAll(toSpecification(filter), pageable)
                 .map(AuditLogResponse::from);
+    }
+
+    public AuditLogResponse get(Long id) {
+        return auditLogRepository.findById(id)
+                .map(AuditLogResponse::from)
+                .orElseThrow(() -> new AppException("Audit log not found", HttpStatus.NOT_FOUND, "AUDIT_LOG_NOT_FOUND"));
     }
 
     private String currentRequestIp() {

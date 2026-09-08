@@ -80,7 +80,7 @@ public class RoleAdminService {
 
     private Permission findPermission(String code) {
         String normalized = required(code, "permission_code is required");
-        return permissionRepository.findAll().stream().filter(p -> p.getCode().equals(normalized)).findFirst().orElseThrow(() -> new AppException("Permission not found", HttpStatus.NOT_FOUND, "PERMISSION_NOT_FOUND"));
+        return permissionRepository.findByCode(normalized).orElseThrow(() -> new AppException("Permission not found", HttpStatus.NOT_FOUND, "PERMISSION_NOT_FOUND"));
     }
 
     private RoleResponse toResponse(Role role) {

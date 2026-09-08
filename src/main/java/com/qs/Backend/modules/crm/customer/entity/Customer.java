@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 
 @Entity
@@ -16,7 +17,7 @@ public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    private UUID id;
 
     private String organizationId;
 
@@ -46,10 +47,14 @@ public class Customer {
     private String gender;
     private String region;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "customer_customer_groups", joinColumns = @JoinColumn(name = "customer_id"))
+    @Column(name = "customer_group_id")
     private List<String> groupIds;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "customer_business_fields", joinColumns = @JoinColumn(name = "customer_id"))
+    @Column(name = "business_field_id")
     private List<String> businessFieldIds;
 
     private Instant lastContactAt;

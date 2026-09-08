@@ -14,10 +14,10 @@ import java.util.UUID;
 public class ManualHubActivityResponse {
 
     @JsonProperty("id")
-    private Long id;
+    private UUID id;
 
     @JsonProperty("document_id")
-    private Long documentId;
+    private UUID documentId;
 
     @JsonProperty("document_title")
     private String documentTitle;

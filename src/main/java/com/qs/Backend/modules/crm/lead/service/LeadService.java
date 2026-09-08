@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -83,11 +84,17 @@ public class LeadService {
     }
 
     private Lead findOrThrow(String id) {
-        return leadRepository.findById(id).filter(l -> l.getDeletedAt() == null).orElseThrow(() -> new AppException("Lead not found", HttpStatus.NOT_FOUND, "LEAD_NOT_FOUND"));
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new AppException("Lead not found", HttpStatus.NOT_FOUND, "LEAD_NOT_FOUND");
+        }
+        return leadRepository.findById(uuid).filter(l -> l.getDeletedAt() == null).orElseThrow(() -> new AppException("Lead not found", HttpStatus.NOT_FOUND, "LEAD_NOT_FOUND"));
     }
 
     private LeadResponse toResponse(Lead lead) {
-        return LeadResponse.builder().id(lead.getId()).name(lead.getName()).phone(lead.getPhone()).email(lead.getEmail()).businessField(lead.getBusinessField()).notes(lead.getNotes()).services(lead.getServices()).createdAt(lead.getCreatedAt()).updatedAt(lead.getUpdatedAt()).build();
+        return LeadResponse.builder().id(lead.getId().toString()).name(lead.getName()).phone(lead.getPhone()).email(lead.getEmail()).businessField(lead.getBusinessField()).notes(lead.getNotes()).services(lead.getServices()).createdAt(lead.getCreatedAt()).updatedAt(lead.getUpdatedAt()).build();
     }
 
     private List<String> normalizeServices(List<String> services) {

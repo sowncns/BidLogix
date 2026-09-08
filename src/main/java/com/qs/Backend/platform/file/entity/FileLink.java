@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "file_links")
@@ -13,10 +14,10 @@ import java.time.Instant;
 public class FileLink {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
-    private String fileId;
+    private UUID id;
+    private UUID fileId;
     private String entityType;
-    private String entityId;
+    private UUID entityId;
     private String purpose;
     private int displayOrder;
     @Column(nullable = false, updatable = false)

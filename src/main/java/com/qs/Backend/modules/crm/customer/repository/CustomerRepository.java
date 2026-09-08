@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
+import java.util.UUID;
 
-public interface CustomerRepository extends JpaRepository<Customer, String>, JpaSpecificationExecutor<Customer> {
+public interface CustomerRepository extends JpaRepository<Customer, UUID>, JpaSpecificationExecutor<Customer> {
 
     Optional<Customer> findByCode(String code);
 
@@ -16,7 +17,7 @@ public interface CustomerRepository extends JpaRepository<Customer, String>, Jpa
 
     boolean existsByPhoneAndDeletedAtIsNull(String phone);
 
-    boolean existsByPhoneAndIdNotAndDeletedAtIsNull(String phone, String id);
+    boolean existsByPhoneAndIdNotAndDeletedAtIsNull(String phone, UUID id);
 
     Page<Customer> findByDeletedAtIsNull(Pageable pageable);
 

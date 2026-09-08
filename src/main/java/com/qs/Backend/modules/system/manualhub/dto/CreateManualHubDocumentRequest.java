@@ -17,7 +17,10 @@ public class CreateManualHubDocumentRequest {
     private UUID productId;
 
     @JsonProperty("parent_id")
-    private Long parentId;
+    private UUID parentId;
+
+    @JsonProperty("document_group_id")
+    private UUID documentGroupId;
 
     @NotBlank
     @JsonProperty("title")

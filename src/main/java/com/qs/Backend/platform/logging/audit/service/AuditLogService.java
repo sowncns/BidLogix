@@ -18,6 +18,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.UUID;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +28,21 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
 
     public void log(UUID actorId, String actorUsername, String action, String targetType, String targetId, String detail) {
+        if (actorId == null) {
+            return;
+        }
         AuditLog entry = new AuditLog();
         entry.setActorId(actorId);
-        entry.setActorUsername(actorUsername);
         entry.setAction(action);
-        entry.setTargetType(targetType);
-        entry.setTargetId(targetId);
-        entry.setDetail(detail);
-        entry.setRequestId(MDC.get(RequestLoggingConstants.REQUEST_ID_MDC_KEY));
-        entry.setIpAddress(currentRequestIp());
+        setTypedTarget(entry, targetType, targetId);
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        putIfNotNull(metadata, "actor_username", actorUsername);
+        putIfNotNull(metadata, "target_type", targetType);
+        putIfNotNull(metadata, "target_id", targetId);
+        putIfNotNull(metadata, "detail", detail);
+        putIfNotNull(metadata, "request_id", MDC.get(RequestLoggingConstants.REQUEST_ID_MDC_KEY));
+        putIfNotNull(metadata, "ip_address", currentRequestIp());
+        entry.setMetadata(metadata);
         auditLogRepository.save(entry);
     }
 
@@ -43,7 +51,7 @@ public class AuditLogService {
                 .map(AuditLogResponse::from);
     }
 
-    public AuditLogResponse get(Long id) {
+    public AuditLogResponse get(UUID id) {
         return auditLogRepository.findById(id)
                 .map(AuditLogResponse::from)
                 .orElseThrow(() -> new AppException("Audit log not found", HttpStatus.NOT_FOUND, "AUDIT_LOG_NOT_FOUND"));
@@ -71,12 +79,6 @@ public class AuditLogService {
             if (filter.action() != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("action"), filter.action()));
             }
-            if (filter.targetType() != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("targetType"), filter.targetType()));
-            }
-            if (filter.targetId() != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("targetId"), filter.targetId()));
-            }
             if (filter.from() != null) {
                 predicates = cb.and(predicates, cb.greaterThanOrEqualTo(root.get("createdAt"), filter.from()));
             }
@@ -85,5 +87,25 @@ public class AuditLogService {
             }
             return predicates;
         };
+    }
+
+    private void setTypedTarget(AuditLog entry, String targetType, String targetId) {
+        if (targetType == null || targetId == null) return;
+        try {
+            UUID id = UUID.fromString(targetId);
+            switch (targetType.toLowerCase()) {
+                case "authuser", "user" -> entry.setTargetUserId(id);
+                case "role" -> entry.setTargetRoleId(id);
+                case "permission" -> entry.setTargetPermissionId(id);
+                case "organization" -> entry.setTargetOrganizationId(id);
+                default -> { }
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Non-UUID business targets remain available in metadata.
+        }
+    }
+
+    private void putIfNotNull(Map<String, Object> metadata, String key, Object value) {
+        if (value != null) metadata.put(key, value);
     }
 }

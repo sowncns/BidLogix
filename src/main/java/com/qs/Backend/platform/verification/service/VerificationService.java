@@ -1,6 +1,7 @@
 package com.qs.Backend.platform.verification.service;
 
 import com.qs.Backend.shared.exception.AppException;
+import com.qs.Backend.platform.auth.security.TokenHasher;
 import com.qs.Backend.platform.verification.entity.VerificationCode;
 import com.qs.Backend.platform.verification.repository.VerificationCodeRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +37,9 @@ public class VerificationService {
         VerificationCode entity = new VerificationCode();
         entity.setTarget(target);
         entity.setPurpose(purpose);
-        entity.setAccountId(accountId);
+        entity.setAuthUserId(accountId);
         entity.setCode(code);
+        entity.setCodeHash(TokenHasher.sha256(code));
         entity.setExpiresAt(Instant.now().plus(EXPIRY_MINUTES, ChronoUnit.MINUTES));
         verificationCodeRepository.save(entity);
 

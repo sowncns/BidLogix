@@ -1,50 +1,53 @@
 package com.qs.Backend.platform.logging.audit.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
-// Actor fields are denormalized (no FK to accounts) so this stays readable even after the
-// account is deleted/renamed, and so platform.logging doesn't depend on platform.auth.
 @Entity
-@Table(name = "audit_logs")
+@Table(name = "rbac_audit_logs")
 @Getter
 @Setter
 public class AuditLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @Column(name = "actor_id")
-    private UUID actorId;
-
-    @Column(name = "actor_username")
-    private String actorUsername;
-
-    // e.g. CREATE, UPDATE, DELETE, LOGIN, LOGIN_FAILED
-    @Column(nullable = false)
+    @Column(name = "action_type", nullable = false)
     private String action;
 
-    // e.g. Customer, WorkOrder, Role
-    @Column(name = "target_type")
-    private String targetType;
+    @Column(name = "performed_by", nullable = false)
+    private UUID actorId;
 
-    @Column(name = "target_id")
-    private String targetId;
+    @Column(name = "target_user_id")
+    private UUID targetUserId;
 
-    @Column(columnDefinition = "TEXT")
-    private String detail;
+    @Column(name = "target_role_id")
+    private UUID targetRoleId;
 
-    @Column(name = "ip_address")
-    private String ipAddress;
+    @Column(name = "target_permission_id")
+    private UUID targetPermissionId;
 
-    @Column(name = "request_id")
-    private String requestId;
+    @Column(name = "target_organization_id")
+    private UUID targetOrganizationId;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> metadata = new LinkedHashMap<>();
+
+    @Column(name = "created_at")
     private Instant createdAt = Instant.now();
 }

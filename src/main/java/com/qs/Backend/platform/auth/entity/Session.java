@@ -25,7 +25,7 @@ public class Session {
     private String refreshTokenHash;
 
     @Column(name = "access_token_jti", nullable = false)
-    private String accessTokenJti;
+    private UUID accessTokenJti;
 
     private String deviceInfo;
 

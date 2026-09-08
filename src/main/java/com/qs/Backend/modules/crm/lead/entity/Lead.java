@@ -17,7 +17,7 @@ import java.util.UUID;
 @Setter
 public class Lead {
     @Id
-    private String id = UUID.randomUUID().toString();
+    private UUID id = UUID.randomUUID();
     @Column(nullable = false)
     private String name;
     @Column(nullable = false, length = 50)
@@ -31,7 +31,7 @@ public class Lead {
     @Column(columnDefinition = "jsonb", nullable = false)
     private List<String> services = new ArrayList<>();
     @Column(name = "source_campaign_id")
-    private String sourceCampaignId;
+    private UUID sourceCampaignId;
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
     @Column(name = "updated_at", nullable = false)

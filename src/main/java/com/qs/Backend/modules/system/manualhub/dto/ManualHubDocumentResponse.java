@@ -19,10 +19,16 @@ import java.util.UUID;
 public class ManualHubDocumentResponse {
 
     @JsonProperty("id")
-    private Long id;
+    private UUID id;
 
     @JsonProperty("parent_id")
-    private Long parentId;
+    private UUID parentId;
+
+    @JsonProperty("root_id")
+    private UUID rootId;
+
+    @JsonProperty("document_group_id")
+    private UUID documentGroupId;
 
     @JsonProperty("product_id")
     private UUID productId;
@@ -57,6 +63,9 @@ public class ManualHubDocumentResponse {
     @JsonProperty("author_name")
     private String authorName;
 
+    @JsonProperty("author_id")
+    private UUID authorId;
+
     // Named "current" (not "isCurrent") on purpose: Lombok's getter for a
     // boolean field named "isCurrent" is isCurrent(), whose Jackson-implicit
     // name is "current" — a mismatch against the field's own implicit name
@@ -80,4 +89,7 @@ public class ManualHubDocumentResponse {
 
     @JsonProperty("rejection_reason")
     private String rejectionReason;
+
+    @JsonProperty("created_at")
+    private Instant createdAt;
 }

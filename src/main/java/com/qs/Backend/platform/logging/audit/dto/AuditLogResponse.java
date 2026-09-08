@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record AuditLogResponse(
-        Long id,
+        UUID id,
         UUID actorId,
         String actorUsername,
         String action,
@@ -21,13 +21,13 @@ public record AuditLogResponse(
         return new AuditLogResponse(
                 log.getId(),
                 log.getActorId(),
-                log.getActorUsername(),
+                (String) log.getMetadata().get("actor_username"),
                 log.getAction(),
-                log.getTargetType(),
-                log.getTargetId(),
-                log.getDetail(),
-                log.getIpAddress(),
-                log.getRequestId(),
+                (String) log.getMetadata().get("target_type"),
+                (String) log.getMetadata().get("target_id"),
+                (String) log.getMetadata().get("detail"),
+                (String) log.getMetadata().get("ip_address"),
+                (String) log.getMetadata().get("request_id"),
                 log.getCreatedAt()
         );
     }

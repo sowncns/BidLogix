@@ -27,19 +27,19 @@ public class PublicManualHubController {
     public ApiResponse<ManualHubDocumentListResponse> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(name = "product_id", required = false) UUID productId,
-            @RequestParam(name = "parent_id", required = false) Long parentId,
+            @RequestParam(name = "parent_id", required = false) UUID parentId,
             @RequestParam(required = false, defaultValue = "20") int limit,
             @RequestParam(required = false, defaultValue = "0") int offset) {
         return ApiResponse.ok(documentService.list(keyword, "released", productId, parentId, false, limit, offset), null);
     }
 
     @GetMapping("/public/manualhub/documents/{id}/download-pdf")
-    public ResponseEntity<Resource> downloadPdf(@PathVariable Long id) {
+    public ResponseEntity<Resource> downloadPdf(@PathVariable UUID id) {
         return pdfResponse(onlyOfficeService.downloadPdf(id, true, true));
     }
 
     @GetMapping("/public/manualhub/documents/{id}/view-pdf")
-    public ResponseEntity<Resource> viewPdf(@PathVariable Long id) {
+    public ResponseEntity<Resource> viewPdf(@PathVariable UUID id) {
         return pdfResponse(onlyOfficeService.downloadPdf(id, false, false));
     }
 

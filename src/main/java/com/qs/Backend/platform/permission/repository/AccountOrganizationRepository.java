@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;
 
-public interface AccountOrganizationRepository extends JpaRepository<AccountOrganization, Long> {
+public interface AccountOrganizationRepository extends JpaRepository<AccountOrganization, AccountOrganization.Key> {
     List<AccountOrganization> findByAccountId(UUID accountId);
 
     void deleteByAccountId(UUID accountId);

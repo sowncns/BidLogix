@@ -16,11 +16,16 @@ import java.util.UUID;
 public class ManualHubDocument {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id = UUID.randomUUID();
 
     @Column(name = "parent_id")
-    private Long parentId;
+    private UUID parentId;
+
+    @Column(name = "root_id")
+    private UUID rootId;
+
+    @Column(name = "document_group_id", nullable = false)
+    private UUID documentGroupId;
 
     @Column(name = "product_id", nullable = false)
     private UUID productId;

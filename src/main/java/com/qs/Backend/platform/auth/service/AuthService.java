@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService implements AuthInterface {
 
-    private static final String CUSTOMER_ROLE = "CUSTOMER";
+    private static final String CUSTOMER_ROLE = "customer";
     private static final long SESSION_TTL_MS = 30L * 24 * 60 * 60 * 1000;
     private static final long SSO_TICKET_TTL_SECONDS = 60;
     private static final long RESET_TOKEN_TTL_DAYS = 7;
@@ -142,7 +142,7 @@ public class AuthService implements AuthInterface {
     public void logout(String accessToken) {
         String jti = jwtService.extractJti(accessToken);
         if (jti == null) return;
-        sessionRepository.findByAccessTokenJti(jti).ifPresent(session -> {
+        sessionRepository.findByAccessTokenJti(UUID.fromString(jti)).ifPresent(session -> {
             session.setRevokedAt(Instant.now());
             sessionRepository.save(session);
 
@@ -374,7 +374,7 @@ public class AuthService implements AuthInterface {
         Session session = new Session();
         session.setAccount(account);
         session.setRefreshTokenHash(TokenHasher.sha256(refreshToken));
-        session.setAccessTokenJti(jti);
+        session.setAccessTokenJti(UUID.fromString(jti));
         session.setExpiresAt(Instant.now().plusMillis(SESSION_TTL_MS));
         if (httpRequest != null) {
             session.setDeviceInfo(httpRequest.getHeader("User-Agent"));

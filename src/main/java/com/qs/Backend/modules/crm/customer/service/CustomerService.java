@@ -74,7 +74,7 @@ public class CustomerService {
         customer.setBusinessFieldIds(request.getBusinessFieldIds());
         customerRepository.save(customer);
 
-        auditLogService.log(performedBy, null, "CUSTOMER_CREATE", "Customer", customer.getId(), null);
+        auditLogService.log(performedBy, null, "CUSTOMER_CREATE", "Customer", customer.getId().toString(), null);
 
         return toResponse(customer);
     }
@@ -139,7 +139,7 @@ public class CustomerService {
         }
         Customer target = findActiveOrThrow(targetId);
         deactivateCustomer(sourceId, performedBy);
-        auditLogService.log(performedBy, null, "CUSTOMER_MERGE", "Customer", target.getId(), "{\"source_id\":\"" + sourceId + "\"}");
+        auditLogService.log(performedBy, null, "CUSTOMER_MERGE", "Customer", target.getId().toString(), "{\"source_id\":\"" + sourceId + "\"}");
         return toResponse(target);
     }
 
@@ -149,7 +149,7 @@ public class CustomerService {
         Customer customer = findActiveOrThrow(id);
 
         if (request.getPhone() != null && !request.getPhone().isEmpty()
-                && customerRepository.existsByPhoneAndIdNotAndDeletedAtIsNull(request.getPhone(), id)) {
+                && customerRepository.existsByPhoneAndIdNotAndDeletedAtIsNull(request.getPhone(), customer.getId())) {
             throw new AppException("Phone already exists", HttpStatus.CONFLICT, "CRM_CUSTOMER_PHONE_EXISTS");
         }
 
@@ -175,7 +175,7 @@ public class CustomerService {
         if (request.getBusinessFieldIds() != null) customer.setBusinessFieldIds(request.getBusinessFieldIds());
         customer.setUpdatedAt(Instant.now());
 
-        auditLogService.log(performedBy, null, "CUSTOMER_UPDATE", "Customer", customer.getId(), null);
+        auditLogService.log(performedBy, null, "CUSTOMER_UPDATE", "Customer", customer.getId().toString(), null);
 
         return toResponse(customer);
     }
@@ -186,7 +186,7 @@ public class CustomerService {
         customer.setDeletedAt(Instant.now());
         customer.setUpdatedAt(Instant.now());
 
-        auditLogService.log(performedBy, null, "CUSTOMER_DELETE", "Customer", customer.getId(), null);
+        auditLogService.log(performedBy, null, "CUSTOMER_DELETE", "Customer", customer.getId().toString(), null);
     }
 
     // ---- Internal helpers ----
@@ -238,7 +238,13 @@ public class CustomerService {
     }
 
     private Customer findActiveOrThrow(String id) {
-        Customer customer = customerRepository.findById(id)
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
+        }
+        Customer customer = customerRepository.findById(uuid)
                 .orElseThrow(() -> new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND"));
         if (customer.getDeletedAt() != null) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
@@ -248,7 +254,7 @@ public class CustomerService {
 
     private CustomerResponse toResponse(Customer customer) {
         return CustomerResponse.builder()
-                .id(customer.getId())
+                .id(customer.getId().toString())
                 .organizationId(customer.getOrganizationId())
                 .code(customer.getCode())
                 .fullName(customer.getFullName())

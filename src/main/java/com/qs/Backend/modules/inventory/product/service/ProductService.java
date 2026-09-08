@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,9 +35,7 @@ public class ProductService {
         }
         Product product = new Product();
         product.setCode(code);
-        product.setSku(code);
         product.setName(normalizeRequired(request.getName(), "name is required"));
-        product.setPrice(BigDecimal.ZERO);
         product.setSpecifications(request.getSpecifications() == null ? new LinkedHashMap<>() : request.getSpecifications());
         product.setWarrantyMonths(request.getWarrantyMonths() == null || request.getWarrantyMonths() <= 0 ? DEFAULT_WARRANTY_MONTHS : request.getWarrantyMonths());
         Instant now = Instant.now();
@@ -71,14 +68,8 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse adjustStock(UUID id, int delta) {
-        return getProduct(id);
-    }
-
-    @Transactional
     public void deactivateProduct(UUID id) {
         Product product = findActiveOrThrow(id);
-        product.setActive(false);
         product.setDeletedAt(Instant.now());
         product.setUpdatedAt(Instant.now());
     }

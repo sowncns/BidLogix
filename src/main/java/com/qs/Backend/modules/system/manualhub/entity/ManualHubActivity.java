@@ -14,11 +14,11 @@ import java.util.UUID;
 public class ManualHubActivity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "document_id", nullable = false)
-    private Long documentId;
+    private UUID documentId;
 
     @Column(name = "actor_id")
     private UUID actorId;

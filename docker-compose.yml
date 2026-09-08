@@ -18,6 +18,9 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password_123}
       STORAGE_UPLOAD_DIR: /app/uploads
       APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://host.docker.internal:8081/api/v1}
+      APP_ONLYOFFICE_DOC_SERVER_URL: ${APP_ONLYOFFICE_DOC_SERVER_URL:-http://localhost:8082}
+      APP_ONLYOFFICE_INTERNAL_URL: http://onlyoffice
+      APP_ONLYOFFICE_JWT_SECRET: ${APP_ONLYOFFICE_JWT_SECRET:-}
     ports:
       - "${APP_PORT:-8081}:8080"
     volumes:
@@ -27,6 +30,29 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      onlyoffice:
+        condition: service_healthy
+
+  onlyoffice:
+    image: onlyoffice/documentserver:8.3
+    container_name: be-onlyoffice
+    restart: always
+    environment:
+      JWT_ENABLED: "false"
+    ports:
+      - "${ONLYOFFICE_PORT:-8082}:80"
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_logs:/var/log/onlyoffice
+      - onlyoffice_lib:/var/lib/onlyoffice
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
   postgres:
     image: postgres:16-alpine
@@ -80,4 +106,10 @@ volumes:
   redisdata:
     driver: local
   pgadmindata:
+    driver: local
+  onlyoffice_data:
+    driver: local
+  onlyoffice_logs:
+    driver: local
+  onlyoffice_lib:
     driver: local

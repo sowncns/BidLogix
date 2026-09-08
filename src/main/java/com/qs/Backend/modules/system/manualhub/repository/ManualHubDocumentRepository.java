@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-public interface ManualHubDocumentRepository extends JpaRepository<ManualHubDocument, Long> {
+public interface ManualHubDocumentRepository extends JpaRepository<ManualHubDocument, UUID> {
 
     // :keyword is cast explicitly because Postgres can't infer a type for an
     // untyped NULL bind parameter used inside concat()/lower() — without the
@@ -28,11 +28,11 @@ public interface ManualHubDocumentRepository extends JpaRepository<ManualHubDocu
             @Param("keyword") String keyword,
             @Param("status") String status,
             @Param("productId") UUID productId,
-            @Param("parentId") Long parentId,
+            @Param("parentId") UUID parentId,
             @Param("authorId") UUID authorId,
             Pageable pageable);
 
-    List<ManualHubDocument> findByParentIdAndIsCurrentTrue(Long parentId);
+    List<ManualHubDocument> findByParentIdAndIsCurrentTrue(UUID parentId);
 
     long countByStatus(String status);
 }

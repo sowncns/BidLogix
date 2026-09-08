@@ -128,7 +128,7 @@ public class ProductItemService {
         if (!("stock".equals(item.getStatus()) || "refurbished".equals(item.getStatus())) || item.getCustomerId() != null) {
             throw new AppException("Product item cannot be activated", HttpStatus.CONFLICT, "PRODUCT_ITEM_CANNOT_ACTIVATE");
         }
-        if (!customerRepository.existsById(request.getCustomerId().toString())) {
+        if (!customerRepository.existsById(request.getCustomerId())) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
         }
 
@@ -259,7 +259,7 @@ public class ProductItemService {
         if (request.isReActivate() && (request.getReActivateReason() == null || request.getReActivateReason().isBlank())) {
             throw new AppException("re_activate_reason is required when re_activate is true", HttpStatus.BAD_REQUEST, "PRODUCT_ITEM_REACTIVATE_REASON_REQUIRED");
         }
-        if (!customerRepository.existsById(request.getCustomerId().toString())) {
+        if (!customerRepository.existsById(request.getCustomerId())) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
         }
 
@@ -337,7 +337,7 @@ public class ProductItemService {
             return requestedProductId;
         }
         if (model != null && !model.isBlank()) {
-            Product product = productRepository.findBySku(model)
+            Product product = productRepository.findByCodeAndDeletedAtIsNull(model)
                     .orElseThrow(() -> new AppException("Product model not found", HttpStatus.NOT_FOUND, "INVENTORY_PRODUCT_NOT_FOUND"));
             return product.getId();
         }

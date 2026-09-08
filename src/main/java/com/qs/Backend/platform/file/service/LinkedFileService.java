@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +26,9 @@ public class LinkedFileService {
     private final FileLinkRepository linkRepository;
 
     @Transactional
-    public LinkedFileResponse upload(String entityType, String entityId, String purpose, MultipartFile file, String uploadedBy, int displayOrder) {
+    public LinkedFileResponse upload(String entityType, UUID entityId, String purpose, MultipartFile file, UUID uploadedBy, int displayOrder) {
         if (file == null || file.isEmpty()) throw new AppException("File is required", HttpStatus.BAD_REQUEST, "FILE_REQUIRED");
-        if (uploadedBy == null || uploadedBy.isBlank()) throw new AppException("user not authenticated", HttpStatus.BAD_REQUEST, "BAD_REQUEST");
+        if (uploadedBy == null) throw new AppException("user not authenticated", HttpStatus.BAD_REQUEST, "BAD_REQUEST");
         String storageKey = storageService.storeFile(file, entityType + "/" + entityId + "/" + purpose);
 
         StoredFile stored = new StoredFile();
@@ -50,14 +51,14 @@ public class LinkedFileService {
     }
 
     @Transactional(readOnly = true)
-    public List<LinkedFileResponse> list(String entityType, String entityId, String purpose) {
+    public List<LinkedFileResponse> list(String entityType, UUID entityId, String purpose) {
         return linkRepository.findByEntityTypeAndEntityIdAndPurposeOrderByDisplayOrderAscCreatedAtAsc(entityType, entityId, purpose).stream()
                 .map(link -> toResponse(activeFile(link.getFileId()), link))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public Download download(String entityType, String entityId, String fileId) {
+    public Download download(String entityType, UUID entityId, UUID fileId) {
         linkRepository.findByEntityTypeAndEntityIdAndFileId(entityType, entityId, fileId)
                 .orElseThrow(() -> new AppException("file not found", HttpStatus.NOT_FOUND, "FILE_NOT_FOUND"));
         StoredFile file = activeFile(fileId);
@@ -65,7 +66,7 @@ public class LinkedFileService {
     }
 
     @Transactional
-    public void delete(String entityType, String entityId, String fileId) {
+    public void delete(String entityType, UUID entityId, UUID fileId) {
         FileLink link = linkRepository.findByEntityTypeAndEntityIdAndFileId(entityType, entityId, fileId)
                 .orElseThrow(() -> new AppException("file not found", HttpStatus.NOT_FOUND, "FILE_NOT_FOUND"));
         linkRepository.delete(link);
@@ -75,7 +76,7 @@ public class LinkedFileService {
         }
     }
 
-    private StoredFile activeFile(String fileId) {
+    private StoredFile activeFile(UUID fileId) {
         StoredFile file = fileRepository.findById(fileId).orElseThrow(() -> new AppException("file not found", HttpStatus.NOT_FOUND, "FILE_NOT_FOUND"));
         if (file.getDeletedAt() != null) throw new AppException("file not found", HttpStatus.NOT_FOUND, "FILE_NOT_FOUND");
         return file;

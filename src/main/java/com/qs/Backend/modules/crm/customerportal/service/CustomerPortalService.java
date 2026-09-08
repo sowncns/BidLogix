@@ -73,11 +73,11 @@ public class CustomerPortalService {
     }
 
     public Object uploadWorkOrderAttachment(String workOrderId, MultipartFile file) {
-        return linkedFileService.upload("work_order", workOrderId, "attachment", file, "portal", 0);
+        return linkedFileService.upload("work_order", UUID.fromString(workOrderId), "attachment", file, null, 0);
     }
 
     public ResponseEntity<Resource> downloadWorkOrderAttachment(String workOrderId, String fileId) {
-        return download(linkedFileService.download("work_order", workOrderId, fileId));
+        return download(linkedFileService.download("work_order", UUID.fromString(workOrderId), UUID.fromString(fileId)));
     }
 
     public Object comments(String workOrderId, int limit, int offset) {
@@ -97,15 +97,15 @@ public class CustomerPortalService {
     }
 
     public Object uploadCommentAttachment(String commentId, MultipartFile file) {
-        return linkedFileService.upload("work_order_comment", commentId, "attachment", file, "portal", 0);
+        return linkedFileService.upload("work_order_comment", UUID.fromString(commentId), "attachment", file, null, 0);
     }
 
     public ResponseEntity<Resource> downloadCommentAttachment(String commentId, String fileId) {
-        return download(linkedFileService.download("work_order_comment", commentId, fileId));
+        return download(linkedFileService.download("work_order_comment", UUID.fromString(commentId), UUID.fromString(fileId)));
     }
 
     public void deleteCommentAttachment(String commentId, String fileId) {
-        linkedFileService.delete("work_order_comment", commentId, fileId);
+        linkedFileService.delete("work_order_comment", UUID.fromString(commentId), UUID.fromString(fileId));
     }
 
     private ResponseEntity<Resource> download(LinkedFileService.Download download) {

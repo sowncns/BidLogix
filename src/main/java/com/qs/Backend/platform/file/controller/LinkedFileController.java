@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,20 +24,20 @@ public class LinkedFileController {
     @PostMapping({"/products/{id}/images", "/activities/{id}/images", "/work-orders/{id}/attachments", "/campaigns/{id}/files", "/work-order-comments/{id}/attachments"})
     public ApiResponse<LinkedFileResponse> upload(@PathVariable String id, @RequestParam("file") MultipartFile file, @RequestParam(defaultValue = "0") int displayOrder, @AuthenticationPrincipal AccountPrincipal principal, HttpServletRequest request) {
         String path = request.getRequestURI();
-        String uploadedBy = principal == null ? null : String.valueOf(principal.getId());
-        return ApiResponse.created(linkedFileService.upload(entityType(path), id, purpose(path), file, uploadedBy, displayOrder), "File uploaded");
+        UUID uploadedBy = principal == null ? null : principal.getId();
+        return ApiResponse.created(linkedFileService.upload(entityType(path), UUID.fromString(id), purpose(path), file, uploadedBy, displayOrder), "File uploaded");
     }
 
     @GetMapping({"/products/{id}/images", "/activities/{id}/images", "/work-orders/{id}/attachments", "/work-order-comments/{id}/attachments", "/campaigns/{id}/files"})
     public ApiResponse<List<LinkedFileResponse>> list(@PathVariable String id, HttpServletRequest request) {
         String path = request.getRequestURI();
-        return ApiResponse.ok(linkedFileService.list(entityType(path), id, purpose(path)), null);
+        return ApiResponse.ok(linkedFileService.list(entityType(path), UUID.fromString(id), purpose(path)), null);
     }
 
     @GetMapping({"/products/{id}/images/{fileId}", "/public/products/{id}/images/{fileId}", "/activities/{id}/images/{fileId}", "/work-orders/{id}/attachments/{fileId}", "/work-order-comments/{id}/attachments/{fileId}", "/campaigns/{id}/files/{fileId}"})
     public ResponseEntity<?> download(@PathVariable String id, @PathVariable String fileId, HttpServletRequest request) {
         String path = request.getRequestURI();
-        var download = linkedFileService.download(entityType(path), id, fileId);
+        var download = linkedFileService.download(entityType(path), UUID.fromString(id), UUID.fromString(fileId));
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(download.mimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + download.fileName() + "\"")
@@ -46,7 +47,7 @@ public class LinkedFileController {
     @DeleteMapping({"/products/{id}/images/{fileId}", "/activities/{id}/images/{fileId}", "/work-orders/{id}/attachments/{fileId}", "/work-order-comments/{id}/attachments/{fileId}", "/campaigns/{id}/files/{fileId}"})
     public ApiResponse<Void> delete(@PathVariable String id, @PathVariable String fileId, HttpServletRequest request) {
         String path = request.getRequestURI();
-        linkedFileService.delete(entityType(path), id, fileId);
+        linkedFileService.delete(entityType(path), UUID.fromString(id), UUID.fromString(fileId));
         return ApiResponse.ok(null, "File deleted");
     }
 

@@ -14,8 +14,11 @@ import java.util.UUID;
 public class VerificationCode {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false)
+    private String type = "email";
 
     @Column(nullable = false)
     private String target; // email or phone
@@ -23,11 +26,14 @@ public class VerificationCode {
     @Column(nullable = false)
     private String code;
 
+    @Column(name = "code_hash", nullable = false)
+    private String codeHash;
+
     @Column(nullable = false)
     private String purpose; // e.g. "registration"
 
-    @Column(name = "account_id")
-    private UUID accountId;
+    @Column(name = "auth_user_id")
+    private UUID authUserId;
 
     @Column(nullable = false)
     private Instant expiresAt;
@@ -38,6 +44,7 @@ public class VerificationCode {
     @Column(nullable = false)
     private int attempts = 0;
 
+    @Column(name = "verified_at")
     private Instant consumedAt;
 
     public boolean isConsumed() {

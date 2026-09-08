@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -67,9 +66,7 @@ public class CustomerSupplementalProductService {
     private Product createProduct(String code) {
         Product product = new Product();
         product.setCode(code);
-        product.setSku(code);
         product.setName(code);
-        product.setPrice(BigDecimal.ZERO);
         product.setWarrantyMonths(24);
         Instant now = Instant.now();
         product.setCreatedAt(now);
@@ -78,7 +75,14 @@ public class CustomerSupplementalProductService {
     }
 
     private void ensureCustomer(String customerId) {
-        if (customerId == null || customerId.isBlank() || !customerRepository.existsById(customerId)) throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
+        boolean exists = false;
+        if (customerId != null && !customerId.isBlank()) {
+            try {
+                exists = customerRepository.existsById(UUID.fromString(customerId));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        if (!exists) throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
     }
 
     private CustomerSupplementalProductResponse toResponse(ProductItem item) {

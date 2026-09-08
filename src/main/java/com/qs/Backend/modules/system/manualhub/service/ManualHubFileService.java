@@ -2,22 +2,23 @@ package com.qs.Backend.modules.system.manualhub.service;
 
 import com.qs.Backend.modules.system.manualhub.dto.UploadFileResponse;
 import com.qs.Backend.modules.system.manualhub.entity.ManualHubDocument;
-import com.qs.Backend.modules.system.manualhub.entity.ManualHubFile;
 import com.qs.Backend.modules.system.manualhub.repository.ManualHubDocumentRepository;
-import com.qs.Backend.modules.system.manualhub.repository.ManualHubFileRepository;
+import com.qs.Backend.platform.auth.security.AccountPrincipal;
 import com.qs.Backend.platform.file.FileStorageService;
+import com.qs.Backend.platform.file.entity.FileLink;
+import com.qs.Backend.platform.file.entity.StoredFile;
+import com.qs.Backend.platform.file.repository.FileLinkRepository;
+import com.qs.Backend.platform.file.repository.StoredFileRepository;
 import com.qs.Backend.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,126 +27,150 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
-// This backend's own base URL for building publicly-fetchable file links.
-// Defaults to the local dev server.port/context-path (see application.yml) —
-// override via APP_PUBLIC_BASE_URL once this runs anywhere but localhost.
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ManualHubFileService {
+    static final String ENTITY_TYPE = "manual_document";
+    static final String PURPOSE = "attachment";
 
     @Value("${app.public-base-url:http://localhost:${server.port}${server.servlet.context-path:}}")
     private String publicBaseUrl;
 
-    private final FileStorageService fileStorageService;
-    private final ManualHubFileRepository fileRepository;
+    private final FileStorageService storageService;
+    private final StoredFileRepository fileRepository;
+    private final FileLinkRepository linkRepository;
     private final ManualHubDocumentRepository documentRepository;
 
     @Transactional
-    public UploadFileResponse upload(Long documentId, MultipartFile file) {
-
-        ManualHubDocument document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
-        String storageKey = fileStorageService.storeFile(file, "manualhub/" + documentId);
-        ManualHubFile record = saveFileRecord(documentId, storageKey, file.getOriginalFilename(), file.getContentType(), file.getSize());
-        document.setFileCount(document.getFileCount() + 1);
-        document.setUpdatedAt(Instant.now());
-        return buildUploadResponse(documentId, record.getId());
+    public UploadFileResponse upload(UUID documentId, MultipartFile file) {
+        ManualHubDocument document = document(documentId);
+        UUID uploadedBy = currentUserId();
+        if (uploadedBy == null) throw new AppException("User not authenticated", HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED");
+        StoredFile stored = saveAndLink(documentId, storageService.storeFile(file, "manualhub/" + documentId),
+                file.getOriginalFilename(), file.getContentType(), file.getSize(), uploadedBy);
+        bumpCount(document);
+        return response(documentId, stored.getId());
     }
 
-    /** Used by the OnlyOffice save callback, which hands us the edited
-     *  document as a URL to re-download, not a MultipartFile. */
     @Transactional
-    public ManualHubFile storeFromUrl(Long documentId, String sourceUrl, String originalFileName, String contentType) {
-        byte[] bytes;
+    public StoredFile storeFromUrl(UUID documentId, String sourceUrl, String name, String contentType) {
         try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(sourceUrl)).GET().build();
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            bytes = response.body();
-        } catch (IOException | InterruptedException e) {
-           log.error(
-                "Không tải được file từ OnlyOffice ONLYOFFICE_FETCH_FAILED"
-            );
-            throw new AppException("Không tải được file từ OnlyOffice", HttpStatus.BAD_GATEWAY, "ONLYOFFICE_FETCH_FAILED");
+            HttpResponse<byte[]> response = HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder(URI.create(sourceUrl)).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) throw new IOException("HTTP " + response.statusCode());
+            return storeBytes(documentId, response.body(), name, contentType);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw fetchFailed();
+        } catch (IOException e) {
+            throw fetchFailed();
         }
-        String storageKey = fileStorageService.storeBytes(bytes, originalFileName, "manualhub/" + documentId);
-        ManualHubFile record = saveFileRecord(documentId, storageKey, originalFileName, contentType, (long) bytes.length);
-        documentRepository.findById(documentId).ifPresent(document -> {
-            document.setFileCount(document.getFileCount() + 1);
-            document.setUpdatedAt(Instant.now());
-        });
-        return record;
     }
 
     @Transactional
-    public ManualHubFile storeBytes(Long documentId, byte[] bytes, String originalFileName, String contentType) {
-        String storageKey = fileStorageService.storeBytes(bytes, originalFileName, "manualhub/" + documentId);
-        ManualHubFile record = saveFileRecord(documentId, storageKey, originalFileName, contentType, (long) bytes.length);
-        documentRepository.findById(documentId).ifPresent(document -> {
-            document.setFileCount(document.getFileCount() + 1);
-            document.setUpdatedAt(Instant.now());
-        });
-        return record;
+    public StoredFile storeBytes(UUID documentId, byte[] bytes, String name, String contentType) {
+        ManualHubDocument document = document(documentId);
+        UUID uploadedBy = document.getAuthorId() != null ? document.getAuthorId() : currentUserId();
+        if (uploadedBy == null) throw new AppException("Không xác định được người tải file", HttpStatus.BAD_REQUEST, "MANUALHUB_UPLOADER_REQUIRED");
+        StoredFile stored = saveAndLink(documentId, storageService.storeBytes(bytes, name, "manualhub/" + documentId),
+                name, contentType, bytes.length, uploadedBy);
+        bumpCount(document);
+        return stored;
     }
 
-    /** Generates a blank .docx and stores it as the document's first file, so
-     *  a freshly-created document already has a real, server-fetchable
-     *  fileUrl and opens straight in OnlyOffice — instead of falling back to
-     *  the client-side editor until the user's first manual save. */
     @Transactional
-    public ManualHubFile createBlankDocx(Long documentId, String title) {
-        byte[] bytes;
+    public StoredFile createBlankDocx(UUID documentId, String title) {
         try (XWPFDocument doc = new XWPFDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            XWPFParagraph paragraph = doc.createParagraph();
-            paragraph.createRun().setText(title != null ? title : "");
+            doc.createParagraph().createRun().setText(title == null ? "" : title);
             doc.write(out);
-            bytes = out.toByteArray();
+            String name = (title == null || title.isBlank() ? "document" : title) + ".docx";
+            return storeBytes(documentId, out.toByteArray(), name,
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         } catch (IOException e) {
             throw new AppException("Không tạo được file docx trống", HttpStatus.INTERNAL_SERVER_ERROR, "MANUALHUB_BLANK_DOCX_FAILED");
         }
-        String fileName = (title != null && !title.isBlank() ? title : "document") + ".docx";
-        String storageKey = fileStorageService.storeBytes(bytes, fileName,
-                "manualhub/" + documentId);
-        ManualHubFile record = saveFileRecord(documentId, storageKey, fileName,
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", (long) bytes.length);
-        documentRepository.findById(documentId).ifPresent(document -> {
-            document.setFileCount(document.getFileCount() + 1);
-            document.setUpdatedAt(Instant.now());
-        });
-        return record;
     }
 
-    public Resource load(Long fileId) {
-        ManualHubFile record = fileRepository.findById(fileId)
+    @Transactional(readOnly = true)
+    public List<StoredFile> list(UUID documentId) {
+        return linkRepository.findByEntityTypeAndEntityIdAndPurposeOrderByDisplayOrderAscCreatedAtAsc(ENTITY_TYPE, documentId, PURPOSE)
+                .stream().map(FileLink::getFileId).map(this::activeFile).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public StoredFile findMeta(UUID documentId, UUID fileId) {
+        linkRepository.findByEntityTypeAndEntityIdAndFileId(ENTITY_TYPE, documentId, fileId)
                 .orElseThrow(() -> new AppException("Không tìm thấy file", HttpStatus.NOT_FOUND, "MANUALHUB_FILE_NOT_FOUND"));
-        return fileStorageService.loadAsResource(record.getStorageKey());
+        return activeFile(fileId);
     }
 
-    public ManualHubFile findMeta(Long fileId) {
-        return fileRepository.findById(fileId)
-                .orElseThrow(() -> new AppException("Không tìm thấy file", HttpStatus.NOT_FOUND, "MANUALHUB_FILE_NOT_FOUND"));
+    public Resource load(UUID documentId, UUID fileId) {
+        return storageService.loadAsResource(findMeta(documentId, fileId).getStorageKey());
     }
 
-    public String publicUrl(Long documentId, Long fileId) {
+    @Transactional
+    public void deleteAllLinked(UUID documentId) {
+        for (FileLink link : linkRepository.findByEntityTypeAndEntityId(ENTITY_TYPE, documentId)) {
+            UUID fileId = link.getFileId();
+            linkRepository.delete(link);
+            if (linkRepository.countByFileId(fileId) == 0) fileRepository.findById(fileId).ifPresent(file -> file.setDeletedAt(Instant.now()));
+        }
+    }
+
+    public String publicUrl(UUID documentId, UUID fileId) {
         return publicBaseUrl + "/public/manualhub/documents/" + documentId + "/files/" + fileId;
     }
 
-    private ManualHubFile saveFileRecord(Long documentId, String storageKey, String originalName, String contentType, Long size) {
-        ManualHubFile record = new ManualHubFile();
-        record.setDocumentId(documentId);
-        record.setStorageKey(storageKey);
-        record.setOriginalName(originalName);
-        record.setContentType(contentType);
-        record.setSize(size);
-        record.setCreatedAt(Instant.now());
-        return fileRepository.save(record);
+    private StoredFile saveAndLink(UUID documentId, String key, String name, String mime, long size, UUID uploadedBy) {
+        StoredFile stored = new StoredFile();
+        stored.setOriginalName(name == null ? "document" : name);
+        stored.setStorageKey(key);
+        stored.setMimeType(mime == null ? "application/octet-stream" : mime);
+        stored.setSizeBytes(size);
+        stored.setVisibility("internal");
+        stored.setUploadedBy(uploadedBy);
+        fileRepository.save(stored);
+        FileLink link = new FileLink();
+        link.setFileId(stored.getId());
+        link.setEntityType(ENTITY_TYPE);
+        link.setEntityId(documentId);
+        link.setPurpose(PURPOSE);
+        link.setDisplayOrder(linkRepository.findByEntityTypeAndEntityIdAndPurposeOrderByDisplayOrderAscCreatedAtAsc(ENTITY_TYPE, documentId, PURPOSE).size());
+        linkRepository.save(link);
+        return stored;
     }
 
-    private UploadFileResponse buildUploadResponse(Long documentId, Long fileId) {
-        return UploadFileResponse.builder()
-                .file(UploadFileResponse.FileInfo.builder().url(publicUrl(documentId, fileId)).build())
-                .build();
+    private StoredFile activeFile(UUID id) {
+        StoredFile file = fileRepository.findById(id)
+                .orElseThrow(() -> new AppException("Không tìm thấy file", HttpStatus.NOT_FOUND, "MANUALHUB_FILE_NOT_FOUND"));
+        if (file.getDeletedAt() != null) throw new AppException("Không tìm thấy file", HttpStatus.NOT_FOUND, "MANUALHUB_FILE_NOT_FOUND");
+        return file;
+    }
+
+    private ManualHubDocument document(UUID id) {
+        return documentRepository.findById(id)
+                .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
+    }
+
+    private void bumpCount(ManualHubDocument document) {
+        document.setFileCount(document.getFileCount() + 1);
+        document.setUpdatedAt(Instant.now());
+    }
+
+    private UUID currentUserId() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication() == null ? null
+                : SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return principal instanceof AccountPrincipal account ? account.getId() : null;
+    }
+
+    private UploadFileResponse response(UUID documentId, UUID fileId) {
+        return UploadFileResponse.builder().file(UploadFileResponse.FileInfo.builder().url(publicUrl(documentId, fileId)).build()).build();
+    }
+
+    private AppException fetchFailed() {
+        return new AppException("Không tải được file từ OnlyOffice", HttpStatus.BAD_GATEWAY, "ONLYOFFICE_FETCH_FAILED");
     }
 }

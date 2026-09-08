@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "files")
@@ -13,13 +14,13 @@ import java.time.Instant;
 public class StoredFile {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    private UUID id;
     private String originalName;
     private String storageKey;
     private String mimeType;
     private long sizeBytes;
     private String visibility;
-    private String uploadedBy;
+    private UUID uploadedBy;
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
     private Instant deletedAt;

@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "manualhub_document_versions")
@@ -15,16 +16,18 @@ import java.time.Instant;
 public class ManualHubDocumentVersion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "document_id", nullable = false)
-    private Long documentId;
+    private UUID documentId;
 
     @Column(nullable = false)
     private String version;
 
     private String title;
+
+    private String format;
 
     @JdbcTypeCode(SqlTypes.JSON)
     private String content;

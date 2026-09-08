@@ -37,7 +37,7 @@ public class ActivationRequestService {
     @Transactional
     public ActivationRequestResponse submit(ActivationRequestSubmitRequest request, UUID userId) {
         requireUser(userId);
-        if (!customerRepository.existsById(request.getCustomerId().toString())) {
+        if (!customerRepository.existsById(request.getCustomerId())) {
             throw new AppException("Customer not found", HttpStatus.NOT_FOUND, "CRM_CUSTOMER_NOT_FOUND");
         }
         String requestType = request.getRequestType() == null || request.getRequestType().isBlank()

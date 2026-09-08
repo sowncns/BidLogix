@@ -74,7 +74,7 @@ public class ProfileService {
         storedFile.setMimeType(file.getContentType() != null ? file.getContentType() : "application/octet-stream");
         storedFile.setSizeBytes(file.getSize());
         storedFile.setVisibility("internal");
-        storedFile.setUploadedBy(uploadedBy != null ? uploadedBy.toString() : userId.toString());
+        storedFile.setUploadedBy(uploadedBy != null ? uploadedBy : userId);
         storedFile = storedFileRepository.save(storedFile);
 
         Profile profile = getOrEmpty(userId);
@@ -86,7 +86,7 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public StoredFile findAvatarFile(UUID userId, String fileId) {
         requireUser(userId);
-        StoredFile storedFile = storedFileRepository.findById(fileId)
+        StoredFile storedFile = storedFileRepository.findById(UUID.fromString(fileId))
                 .orElseThrow(() -> new AppException("Không tìm thấy avatar", HttpStatus.NOT_FOUND, "AVATAR_NOT_FOUND"));
         String expectedPrefix = "avatars/" + userId + "/";
         if (storedFile.getDeletedAt() != null || !storedFile.getStorageKey().startsWith(expectedPrefix)) {

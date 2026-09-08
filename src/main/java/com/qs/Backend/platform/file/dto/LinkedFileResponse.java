@@ -5,11 +5,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class LinkedFileResponse {
-    private String id;
+    private UUID id;
     @JsonProperty("original_name")
     private String originalName;
     @JsonProperty("mime_type")

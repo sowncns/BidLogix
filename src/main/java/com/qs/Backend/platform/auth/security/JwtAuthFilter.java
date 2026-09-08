@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -43,7 +44,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = accountDetailsService.loadUserByUsername(username);
 
-            boolean sessionRevoked = sessionRepository.findByAccessTokenJti(jwtService.extractJti(token))
+            String jti = jwtService.extractJti(token);
+            boolean sessionRevoked = jti != null && sessionRepository.findByAccessTokenJti(UUID.fromString(jti))
                     .map(session -> session.isRevoked())
                     .orElse(false);
 

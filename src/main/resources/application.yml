@@ -67,6 +67,12 @@ app:
     address: redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}
     password: ${REDIS_PASSWORD:}
 
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:${SERVER_PORT:8080}${PREFIX_API:/api/v1}}
+  onlyoffice:
+    doc-server-url: ${APP_ONLYOFFICE_DOC_SERVER_URL:http://localhost:8082}
+    internal-url: ${APP_ONLYOFFICE_INTERNAL_URL:http://localhost:8082}
+    jwt-secret: ${APP_ONLYOFFICE_JWT_SECRET:}
+
   mail:
     enabled: ${MAIL_ENABLED:false}
     from: ${MAIL_FROM:no-reply@example.com}

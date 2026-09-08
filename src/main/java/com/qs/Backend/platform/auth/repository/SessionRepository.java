@@ -14,7 +14,7 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
 
     Optional<Session> findByRefreshTokenHash(String refreshTokenHash);
 
-    Optional<Session> findByAccessTokenJti(String accessTokenJti);
+    Optional<Session> findByAccessTokenJti(UUID accessTokenJti);
 
     @Modifying
     @Query("UPDATE Session s SET s.revokedAt = :now WHERE s.account.id = :accountId AND s.revokedAt IS NULL")

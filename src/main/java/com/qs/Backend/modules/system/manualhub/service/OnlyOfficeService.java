@@ -3,9 +3,8 @@ package com.qs.Backend.modules.system.manualhub.service;
 import com.qs.Backend.modules.system.manualhub.dto.OnlyOfficeCallbackRequest;
 import com.qs.Backend.modules.system.manualhub.dto.OnlyOfficeConfigResponse;
 import com.qs.Backend.modules.system.manualhub.entity.ManualHubDocument;
-import com.qs.Backend.modules.system.manualhub.entity.ManualHubFile;
 import com.qs.Backend.modules.system.manualhub.repository.ManualHubDocumentRepository;
-import com.qs.Backend.modules.system.manualhub.repository.ManualHubFileRepository;
+import com.qs.Backend.platform.file.entity.StoredFile;
 import com.qs.Backend.shared.exception.AppException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -27,6 +26,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -51,18 +51,17 @@ public class OnlyOfficeService {
     private static final List<Integer> SAVEABLE_STATUSES = List.of(2, 6);
 
     private final ManualHubDocumentRepository documentRepository;
-    private final ManualHubFileRepository fileRepository;
     private final ManualHubFileService fileService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    public OnlyOfficeConfigResponse buildConfig(Long documentId, boolean readOnly) {
+    public OnlyOfficeConfigResponse buildConfig(UUID documentId, boolean readOnly) {
         ManualHubDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
-        List<ManualHubFile> files = fileRepository.findByDocumentIdOrderByCreatedAtDesc(documentId);
+        List<StoredFile> files = fileService.list(documentId);
         if (files.isEmpty()) {
             throw new AppException("Tài liệu chưa có file để mở bằng OnlyOffice", HttpStatus.BAD_REQUEST, "MANUALHUB_NO_FILE");
         }
-        ManualHubFile latest = files.get(0);
+        StoredFile latest = files.get(files.size() - 1);
         String fileUrl = fileService.publicUrl(documentId, latest.getId()).replace("localhost", "host.docker.internal");
         String key = (documentId + "-" + document.getVersion() + "-" + System.currentTimeMillis());
         if (key.length() > 128) key = key.substring(0, 128);
@@ -90,7 +89,7 @@ public class OnlyOfficeService {
     // this method "handled" the error and returned normally. Leaving this
     // method non-transactional means only the inner call's own transaction
     // is affected by its own failure.
-    public Map<String, Object> handleCallback(Long documentId, OnlyOfficeCallbackRequest body) {
+    public Map<String, Object> handleCallback(UUID documentId, OnlyOfficeCallbackRequest body) {
         if (body.getStatus() == null || !SAVEABLE_STATUSES.contains(body.getStatus())) {
             return Map.of("error", 0);
         }
@@ -106,41 +105,44 @@ public class OnlyOfficeService {
         }
     }
 
-    public Map<String, String> forceSave(Long documentId) {
+    public Map<String, String> forceSave(UUID documentId) {
         ManualHubDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
         String fileUrl = extractFileUrl(document.getContent());
         return Map.of("file_url", fileUrl == null ? "" : fileUrl);
     }
 
-    public PdfDownload downloadPdf(Long documentId, boolean requireCurrent, boolean attachment) {
+    public PdfDownload downloadPdf(UUID documentId, boolean requireCurrent, boolean attachment) {
         ManualHubDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
         if (requireCurrent && (!"released".equals(document.getStatus()) || !document.isCurrent())) {
             throw new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND");
         }
-        ManualHubFile source = fileRepository.findByDocumentIdOrderByCreatedAtDesc(documentId).stream()
-                .findFirst()
+        List<StoredFile> linkedFiles = fileService.list(documentId);
+        StoredFile source = linkedFiles.stream()
+                .filter(file -> !"application/pdf".equalsIgnoreCase(file.getMimeType()))
+                .reduce((first, second) -> second)
+                .or(() -> linkedFiles.stream().reduce((first, second) -> second))
                 .orElseThrow(() -> new AppException("Tài liệu chưa có file", HttpStatus.BAD_REQUEST, "MANUALHUB_NO_FILE"));
         String disposition = (attachment ? "attachment" : "inline") + "; filename=\"" + safeDownloadName(document.getTitle()) + ".pdf\"";
         String ext = extension(source.getOriginalName());
         if (ext.isBlank()) ext = document.getFormat() == null ? "docx" : document.getFormat().toLowerCase();
         if ("pdf".equals(ext)) {
-            return new PdfDownload(fileService.load(source.getId()), disposition);
+            return new PdfDownload(fileService.load(documentId, source.getId()), disposition);
         }
 
         String sourceIdentity = fileService.publicUrl(documentId, source.getId());
         PdfCache cache = extractPdfCache(document.getContent());
         if (cache != null && sourceIdentity.equals(cache.sourceFileUrl())) {
             try {
-                return new PdfDownload(fileService.load(Long.valueOf(cache.fileId())), disposition);
+                return new PdfDownload(fileService.load(documentId, UUID.fromString(cache.fileId())), disposition);
             } catch (RuntimeException ignored) {
                 // Stale cache record: regenerate from current source below.
             }
         }
 
         byte[] pdf = convertToPdfBytes(fileService.publicUrl(documentId, source.getId()).replace("localhost", "host.docker.internal"), ext, "pdf-" + documentId + "-" + System.nanoTime());
-        ManualHubFile cached = fileService.storeBytes(documentId, pdf, safeDownloadName(document.getTitle()) + ".pdf", "application/pdf");
+        StoredFile cached = fileService.storeBytes(documentId, pdf, safeDownloadName(document.getTitle()) + ".pdf", "application/pdf");
         updatePdfCache(document, cached.getId(), sourceIdentity);
         return new PdfDownload(new ByteArrayResource(pdf), disposition);
     }
@@ -191,7 +193,7 @@ public class OnlyOfficeService {
         return response.body();
     }
 
-    private void updatePdfCache(ManualHubDocument document, Long fileId, String sourceIdentity) {
+    private void updatePdfCache(ManualHubDocument document, UUID fileId, String sourceIdentity) {
         try {
             Map<String, Object> content = document.getContent() == null || document.getContent().isBlank()
                     ? new HashMap<>()
@@ -251,7 +253,7 @@ public class OnlyOfficeService {
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 
-    private String callbackUrl(Long documentId) {
+    private String callbackUrl(UUID documentId) {
         return (publicBaseUrl + "/public/manualhub/documents/" + documentId + "/onlyoffice-callback")
                 .replace("localhost", "host.docker.internal");
     }

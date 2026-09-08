@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -13,16 +14,19 @@ import java.time.Instant;
 public class ManualHubDocumentVersionResponse {
 
     @JsonProperty("id")
-    private Long id;
+    private UUID id;
 
     @JsonProperty("document_id")
-    private Long documentId;
+    private UUID documentId;
 
     @JsonProperty("version")
     private String version;
 
     @JsonProperty("title")
     private String title;
+
+    @JsonProperty("format")
+    private String format;
 
     @JsonProperty("content")
     private Object content;

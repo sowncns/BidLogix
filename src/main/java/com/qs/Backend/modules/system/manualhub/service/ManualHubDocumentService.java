@@ -7,11 +7,9 @@ import com.qs.Backend.modules.system.manualhub.dto.*;
 import com.qs.Backend.modules.system.manualhub.entity.ManualHubActivity;
 import com.qs.Backend.modules.system.manualhub.entity.ManualHubDocument;
 import com.qs.Backend.modules.system.manualhub.entity.ManualHubDocumentVersion;
-import com.qs.Backend.modules.system.manualhub.entity.ManualHubFile;
 import com.qs.Backend.modules.system.manualhub.repository.ManualHubActivityRepository;
 import com.qs.Backend.modules.system.manualhub.repository.ManualHubDocumentRepository;
 import com.qs.Backend.modules.system.manualhub.repository.ManualHubDocumentVersionRepository;
-import com.qs.Backend.modules.system.manualhub.repository.ManualHubFileRepository;
 import com.qs.Backend.platform.auth.security.AccountPrincipal;
 import com.qs.Backend.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
@@ -36,13 +34,12 @@ public class ManualHubDocumentService {
     private final ManualHubDocumentRepository documentRepository;
     private final ManualHubDocumentVersionRepository versionRepository;
     private final ManualHubActivityRepository activityRepository;
-    private final ManualHubFileRepository fileRepository;
     private final ProductRepository productRepository;
     private final ManualHubFileService fileService;
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
-    public ManualHubDocumentListResponse list(String keyword, String status, UUID productId, Long parentId,
+    public ManualHubDocumentListResponse list(String keyword, String status, UUID productId, UUID parentId,
                                                boolean mine, int limit, int offset) {
         
         int pageSize = limit > 0 ? limit : 20;
@@ -61,13 +58,15 @@ public class ManualHubDocumentService {
     }
 
     @Transactional(readOnly = true)
-    public ManualHubDocumentResponse get(Long id) {
+    public ManualHubDocumentResponse get(UUID id) {
         return toResponse(findOrThrow(id));
     }
 
     @Transactional
     public ManualHubDocumentResponse create(CreateManualHubDocumentRequest request) {
         ManualHubDocument document = new ManualHubDocument();
+        document.setRootId(document.getId());
+        document.setDocumentGroupId(request.getDocumentGroupId() != null ? request.getDocumentGroupId() : document.getId());
         document.setProductId(request.getProductId());
         document.setParentId(request.getParentId());
         document.setTitle(request.getTitle());
@@ -88,7 +87,7 @@ public class ManualHubDocumentService {
         // document already has a real, server-fetchable fileUrl and opens
         // straight in OnlyOffice instead of the client-side fallback editor.
         if ("docx".equalsIgnoreCase(document.getFormat()) && request.getContent() == null) {
-            ManualHubFile blank = fileService.createBlankDocx(document.getId(), document.getTitle());
+            var blank = fileService.createBlankDocx(document.getId(), document.getTitle());
             String fileUrl = fileService.publicUrl(document.getId(), blank.getId());
             document.setContent(writeContent(java.util.Map.of("file_url", fileUrl)));
         }
@@ -98,7 +97,7 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public ManualHubDocumentResponse update(Long id, UpdateManualHubDocumentRequest request) {
+    public ManualHubDocumentResponse update(UUID id, UpdateManualHubDocumentRequest request) {
         ManualHubDocument document = findOrThrow(id);
         if (request.getTitle() != null) document.setTitle(request.getTitle());
         if (request.getDescription() != null) document.setDescription(request.getDescription());
@@ -115,7 +114,7 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public ManualHubDocumentResponse publish(Long id) {
+    public ManualHubDocumentResponse publish(UUID id) {
         ManualHubDocument document = findOrThrow(id);
         if (document.getParentId() != null) {
             documentRepository.findById(document.getParentId()).ifPresent(parent -> {
@@ -133,7 +132,7 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public ManualHubDocumentResponse hide(Long id) {
+    public ManualHubDocumentResponse hide(UUID id) {
         ManualHubDocument document = findOrThrow(id);
         document.setStatus("hidden");
         document.setUpdatedAt(Instant.now());
@@ -142,7 +141,7 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public ManualHubDocumentResponse unhide(Long id) {
+    public ManualHubDocumentResponse unhide(UUID id) {
         ManualHubDocument document = findOrThrow(id);
         document.setStatus("released");
         document.setUpdatedAt(Instant.now());
@@ -151,7 +150,7 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public void delete(Long id, boolean asRequest) {
+    public void delete(UUID id, boolean asRequest) {
         ManualHubDocument document = findOrThrow(id);
         if (asRequest) {
             document.setStatus("pending_delete");
@@ -163,14 +162,14 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public ManualHubDocumentResponse approveDelete(Long id) {
+    public ManualHubDocumentResponse approveDelete(UUID id) {
         ManualHubDocument document = findOrThrow(id);
         hardDelete(document);
         return null;
     }
 
     @Transactional
-    public ManualHubDocumentResponse rejectDelete(Long id) {
+    public ManualHubDocumentResponse rejectDelete(UUID id) {
         ManualHubDocument document = findOrThrow(id);
         document.setStatus(document.getReleasedAt() != null ? "released" : "draft");
         document.setUpdatedAt(Instant.now());
@@ -179,7 +178,7 @@ public class ManualHubDocumentService {
     }
 
     @Transactional
-    public ManualHubDocumentResponse rollback(Long id, String reason) {
+    public ManualHubDocumentResponse rollback(UUID id, String reason) {
         ManualHubDocument document = findOrThrow(id);
         if (document.getParentId() == null) {
             throw new AppException("Tài liệu không có phiên bản trước để khôi phục", HttpStatus.BAD_REQUEST, "MANUALHUB_NO_PARENT_VERSION");
@@ -197,20 +196,20 @@ public class ManualHubDocumentService {
     }
 
     @Transactional(readOnly = true)
-    public List<ManualHubDocumentVersionResponse> listVersions(Long documentId) {
+    public List<ManualHubDocumentVersionResponse> listVersions(UUID documentId) {
         return versionRepository.findByDocumentIdOrderByCreatedAtDesc(documentId).stream()
                 .map(this::toVersionResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public ManualHubDocumentVersionResponse getVersion(Long documentId, String version) {
+    public ManualHubDocumentVersionResponse getVersion(UUID documentId, String version) {
         ManualHubDocumentVersion entity = versionRepository.findByDocumentIdAndVersion(documentId, version)
                 .orElseThrow(() -> new AppException("Không tìm thấy phiên bản", HttpStatus.NOT_FOUND, "MANUALHUB_VERSION_NOT_FOUND"));
         return toVersionResponse(entity);
     }
 
     @Transactional(readOnly = true)
-    public List<ManualHubActivityResponse> listActivities(Long documentId) {
+    public List<ManualHubActivityResponse> listActivities(UUID documentId) {
         ManualHubDocument document = findOrThrow(documentId);
         return activityRepository.findByDocumentIdOrderByCreatedAtDesc(documentId).stream()
                 .map(a -> toActivityResponse(a, document.getTitle(), productName(document.getProductId())))
@@ -243,19 +242,19 @@ public class ManualHubDocumentService {
     // internal helpers
     // -----------------------------------------------------------------
 
-    void bumpFileCount(Long documentId) {
+    void bumpFileCount(UUID documentId) {
         ManualHubDocument document = findOrThrow(documentId);
         document.setFileCount(document.getFileCount() + 1);
         document.setUpdatedAt(Instant.now());
     }
 
-    ManualHubDocument findOrThrow(Long id) {
+    ManualHubDocument findOrThrow(UUID id) {
         return documentRepository.findById(id)
                 .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
     }
 
     private void hardDelete(ManualHubDocument document) {
-        fileRepository.deleteAll(fileRepository.findByDocumentIdOrderByCreatedAtDesc(document.getId()));
+        fileService.deleteAllLinked(document.getId());
         versionRepository.deleteAll(versionRepository.findByDocumentIdOrderByCreatedAtDesc(document.getId()));
         activityRepository.deleteAll(activityRepository.findByDocumentIdOrderByCreatedAtDesc(document.getId()));
         documentRepository.delete(document);
@@ -266,13 +265,14 @@ public class ManualHubDocumentService {
         version.setDocumentId(document.getId());
         version.setVersion(document.getVersion());
         version.setTitle(document.getTitle());
+        version.setFormat(document.getFormat());
         version.setContent(document.getContent());
         version.setCreatedByName(currentUsername());
         version.setCreatedAt(Instant.now());
         versionRepository.save(version);
     }
 
-    private void recordActivity(Long documentId, String action, String content) {
+    private void recordActivity(UUID documentId, String action, String content) {
         ManualHubActivity activity = new ManualHubActivity();
         activity.setDocumentId(documentId);
         activity.setActorId(currentUserId());
@@ -292,6 +292,8 @@ public class ManualHubDocumentService {
         return ManualHubDocumentResponse.builder()
                 .id(d.getId())
                 .parentId(d.getParentId())
+                .rootId(d.getRootId())
+                .documentGroupId(d.getDocumentGroupId())
                 .productId(d.getProductId())
                 .productName(productName(d.getProductId()))
                 .title(d.getTitle())
@@ -303,12 +305,14 @@ public class ManualHubDocumentService {
                 .language(d.getLanguage())
                 .version(d.getVersion())
                 .authorName(d.getAuthorName())
+                .authorId(d.getAuthorId())
                 .current(d.isCurrent())
                 .submittedAt(d.getSubmittedAt())
                 .releasedAt(d.getReleasedAt())
                 .updatedAt(d.getUpdatedAt())
                 .fileCount(d.getFileCount())
                 .rejectionReason(d.getRejectionReason())
+                .createdAt(d.getCreatedAt())
                 .build();
     }
 
@@ -318,6 +322,7 @@ public class ManualHubDocumentService {
                 .documentId(v.getDocumentId())
                 .version(v.getVersion())
                 .title(v.getTitle())
+                .format(v.getFormat())
                 .content(readContent(v.getContent()))
                 .fileUrl(v.getFileUrl())
                 .createdByName(v.getCreatedByName())

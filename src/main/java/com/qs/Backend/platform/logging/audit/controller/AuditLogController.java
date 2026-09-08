@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 public class AuditLogController {
@@ -26,7 +28,7 @@ public class AuditLogController {
 
     @GetMapping({"/audit-logs/{id}", "/audit/rbac/{id}"})
     @PreAuthorize("hasAuthority('AUDIT_LOG_VIEW')")
-    public ApiResponse<AuditLogResponse> get(@PathVariable Long id) {
+    public ApiResponse<AuditLogResponse> get(@PathVariable UUID id) {
         return ApiResponse.ok(auditLogService.get(id), null);
     }
 }

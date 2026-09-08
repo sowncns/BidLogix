@@ -15,6 +15,8 @@ import com.qs.Backend.modules.system.manualhub.repository.ManualHubFileRepositor
 import com.qs.Backend.platform.auth.security.AccountPrincipal;
 import com.qs.Backend.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ManualHubDocumentService {
@@ -40,8 +43,10 @@ public class ManualHubDocumentService {
     @Transactional(readOnly = true)
     public ManualHubDocumentListResponse list(String keyword, String status, Long productId, Long parentId,
                                                boolean mine, int limit, int offset) {
+        
         int pageSize = limit > 0 ? limit : 20;
         int page = offset > 0 ? offset / pageSize : 0;
+        
         Long authorId = mine ? currentUserId() : null;
         Page<ManualHubDocument> result = documentRepository.search(
                 blankToNull(keyword), blankToNull(status), productId, parentId, authorId,

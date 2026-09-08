@@ -8,6 +8,8 @@ import com.qs.Backend.modules.system.manualhub.repository.ManualHubFileRepositor
 import com.qs.Backend.platform.file.FileStorageService;
 import com.qs.Backend.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,7 @@ import java.time.Instant;
 // This backend's own base URL for building publicly-fetchable file links.
 // Defaults to the local dev server.port/context-path (see application.yml) —
 // override via APP_PUBLIC_BASE_URL once this runs anywhere but localhost.
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ManualHubFileService {
@@ -41,6 +44,7 @@ public class ManualHubFileService {
 
     @Transactional
     public UploadFileResponse upload(Long documentId, MultipartFile file) {
+
         ManualHubDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new AppException("Không tìm thấy tài liệu", HttpStatus.NOT_FOUND, "MANUALHUB_DOCUMENT_NOT_FOUND"));
         String storageKey = fileStorageService.storeFile(file, "manualhub/" + documentId);
@@ -61,6 +65,9 @@ public class ManualHubFileService {
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
             bytes = response.body();
         } catch (IOException | InterruptedException e) {
+           log.error(
+                "Không tải được file từ OnlyOffice ONLYOFFICE_FETCH_FAILED"
+            );
             throw new AppException("Không tải được file từ OnlyOffice", HttpStatus.BAD_GATEWAY, "ONLYOFFICE_FETCH_FAILED");
         }
         String storageKey = fileStorageService.storeBytes(bytes, originalFileName, "manualhub/" + documentId);

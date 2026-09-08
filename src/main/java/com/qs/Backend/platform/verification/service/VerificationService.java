@@ -23,6 +23,7 @@ public class VerificationService {
 
     @Transactional
     public String generateCode(String target, String purpose, Long accountId) {
+        target = normalizeTarget(target);
         String code = String.format("%06d", random.nextInt(1_000_000));
 
         VerificationCode entity = new VerificationCode();
@@ -38,6 +39,7 @@ public class VerificationService {
 
     @Transactional
     public void verifyCode(String target, String purpose, String code) {
+        target = normalizeTarget(target);
         VerificationCode entity = verificationCodeRepository
                 .findTopByTargetAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(target, purpose)
                 .orElseThrow(() -> new AppException("Mã xác thực không hợp lệ", HttpStatus.BAD_REQUEST, "VERIFICATION_CODE_INVALID"));
@@ -51,5 +53,9 @@ public class VerificationService {
 
         entity.setConsumedAt(Instant.now());
         verificationCodeRepository.save(entity);
+    }
+
+    private String normalizeTarget(String target) {
+        return target == null ? null : target.trim().toLowerCase();
     }
 }

@@ -1,14 +1,19 @@
 package com.qs.Backend.platform.profile.service;
 
+import com.qs.Backend.platform.file.FileStorageService;
+import com.qs.Backend.platform.file.entity.StoredFile;
+import com.qs.Backend.platform.file.repository.StoredFileRepository;
 import com.qs.Backend.platform.profile.dto.ProfileResponse;
 import com.qs.Backend.platform.profile.dto.ProfileUpdateRequest;
 import com.qs.Backend.platform.profile.entity.Profile;
 import com.qs.Backend.platform.profile.repository.ProfileRepository;
 import com.qs.Backend.shared.exception.AppException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 
@@ -17,6 +22,8 @@ import java.time.Instant;
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final FileStorageService fileStorageService;
+    private final StoredFileRepository storedFileRepository;
 
     @Transactional(readOnly = true)
     public ProfileResponse getMe(Long userId) {
@@ -54,6 +61,41 @@ public class ProfileService {
         if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));
         profile.setUpdatedAt(Instant.now());
         return toResponse(profileRepository.save(profile));
+    }
+
+    @Transactional
+    public ProfileResponse uploadAvatar(Long userId, MultipartFile file, Long uploadedBy) {
+        requireUser(userId);
+        String storageKey = fileStorageService.storeFile(file, "avatars/" + userId);
+        StoredFile storedFile = new StoredFile();
+        storedFile.setOriginalName(file.getOriginalFilename() != null ? file.getOriginalFilename() : "avatar");
+        storedFile.setStorageKey(storageKey);
+        storedFile.setMimeType(file.getContentType() != null ? file.getContentType() : "application/octet-stream");
+        storedFile.setSizeBytes(file.getSize());
+        storedFile.setVisibility("internal");
+        storedFile.setUploadedBy(uploadedBy != null ? uploadedBy.toString() : userId.toString());
+        storedFile = storedFileRepository.save(storedFile);
+
+        Profile profile = getOrEmpty(userId);
+        profile.setAvatarUrl("/users/" + userId + "/avatar/" + storedFile.getId());
+        profile.setUpdatedAt(Instant.now());
+        return toResponse(profileRepository.save(profile));
+    }
+
+    @Transactional(readOnly = true)
+    public StoredFile findAvatarFile(Long userId, String fileId) {
+        requireUser(userId);
+        StoredFile storedFile = storedFileRepository.findById(fileId)
+                .orElseThrow(() -> new AppException("Không tìm thấy avatar", HttpStatus.NOT_FOUND, "AVATAR_NOT_FOUND"));
+        String expectedPrefix = "avatars/" + userId + "/";
+        if (storedFile.getDeletedAt() != null || !storedFile.getStorageKey().startsWith(expectedPrefix)) {
+            throw new AppException("Không tìm thấy avatar", HttpStatus.NOT_FOUND, "AVATAR_NOT_FOUND");
+        }
+        return storedFile;
+    }
+
+    public Resource loadAvatar(StoredFile storedFile) {
+        return fileStorageService.loadAsResource(storedFile.getStorageKey());
     }
 
     // Create-or-update: mirrors qs-crm's "get or create profile" flow on user update.

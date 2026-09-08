@@ -10,17 +10,16 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/profiles")
 @RequiredArgsConstructor
 public class ProfileController {
     private final ProfileService profileService;
 
-    @GetMapping("/me")
+    @GetMapping({"/profile", "/profiles/me"})
     public ApiResponse<ProfileResponse> me(@AuthenticationPrincipal AccountPrincipal principal) {
         return ApiResponse.ok(profileService.getMe(principal == null ? null : principal.getId()), null);
     }
 
-    @PatchMapping("/me")
+    @PatchMapping({"/profile", "/profiles/me"})
     public ApiResponse<ProfileResponse> updateMe(@AuthenticationPrincipal AccountPrincipal principal, @RequestBody ProfileUpdateRequest request) {
         return ApiResponse.ok(profileService.updateMe(principal == null ? null : principal.getId(), request), "Profile updated");
     }

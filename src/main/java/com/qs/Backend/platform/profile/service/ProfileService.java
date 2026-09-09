@@ -1,5 +1,7 @@
 package com.qs.Backend.platform.profile.service;
 
+import com.qs.Backend.platform.auth.entity.AuthUser;
+import com.qs.Backend.platform.auth.repository.AccountRepository;
 import com.qs.Backend.platform.file.FileStorageService;
 import com.qs.Backend.platform.file.entity.StoredFile;
 import com.qs.Backend.platform.file.repository.StoredFileRepository;
@@ -25,6 +27,7 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
     private final FileStorageService fileStorageService;
     private final StoredFileRepository storedFileRepository;
+    private final AccountRepository accountRepository;
 
     @Transactional(readOnly = true)
     public ProfileResponse getMe(UUID userId) {
@@ -50,7 +53,7 @@ public class ProfileService {
     public ProfileResponse updateMe(UUID userId, ProfileUpdateRequest request) {
         requireUser(userId);
         Profile profile = upsert(userId, request.getFirstName(), request.getLastName(), request.getAvatarUrl());
-        if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));
+        updateRegion(userId, request.getRegion());
         profile.setUpdatedAt(Instant.now());
         return toResponse(profileRepository.save(profile));
     }
@@ -59,9 +62,18 @@ public class ProfileService {
     public ProfileResponse updateByUserId(UUID userId, ProfileUpdateRequest request) {
         requireUser(userId);
         Profile profile = upsert(userId, request.getFirstName(), request.getLastName(), request.getAvatarUrl());
-        if (request.getRegion() != null) profile.setRegion(blankToNull(request.getRegion()));
+        updateRegion(userId, request.getRegion());
         profile.setUpdatedAt(Instant.now());
         return toResponse(profileRepository.save(profile));
+    }
+
+    // region lives on auth_users (qs_crm schema), not user_profiles.
+    private void updateRegion(UUID userId, String region) {
+        if (region == null) return;
+        accountRepository.findById(userId).ifPresent(account -> {
+            account.setRegion(blankToNull(region));
+            accountRepository.save(account);
+        });
     }
 
     @Transactional
@@ -114,7 +126,8 @@ public class ProfileService {
     }
 
     private ProfileResponse toResponse(Profile profile) {
-        return ProfileResponse.builder().id(profile.getId()).userId(profile.getUserId()).firstName(profile.getFirstName()).lastName(profile.getLastName()).avatarUrl(profile.getAvatarUrl()).region(profile.getRegion()).createdAt(profile.getCreatedAt()).updatedAt(profile.getUpdatedAt()).build();
+        String region = accountRepository.findById(profile.getUserId()).map(AuthUser::getRegion).orElse(null);
+        return ProfileResponse.builder().id(profile.getId()).userId(profile.getUserId()).firstName(profile.getFirstName()).lastName(profile.getLastName()).avatarUrl(profile.getAvatarUrl()).region(region).createdAt(profile.getCreatedAt()).updatedAt(profile.getUpdatedAt()).build();
     }
 
     private void requireUser(UUID userId) {

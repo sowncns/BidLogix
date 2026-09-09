@@ -13,7 +13,7 @@ import java.util.UUID;
 @Builder
 public class ActivationRequestResponse {
 
-    private Long id;
+    private UUID id;
 
     @JsonProperty("request_type")
     private String requestType;
@@ -25,7 +25,7 @@ public class ActivationRequestResponse {
     private UUID customerId;
 
     @JsonProperty("organization_id")
-    private String organizationId;
+    private UUID organizationId;
     private List<String> inputs;
 
     @JsonProperty("warranty_expiry")

@@ -11,7 +11,7 @@ import java.util.Map;
 @Getter
 @Builder
 public class KeyGenHistoryResponse {
-    private Long id;
+    private UUID id;
     @JsonProperty("key_type")
     private String keyType;
     @JsonProperty("input_data")
@@ -23,7 +23,7 @@ public class KeyGenHistoryResponse {
     @JsonProperty("generated_by_name")
     private String generatedByName;
     @JsonProperty("organization_id")
-    private String organizationId;
+    private UUID organizationId;
     @JsonProperty("product_item_id")
     private UUID productItemId;
     @JsonProperty("product_item_code")

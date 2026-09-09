@@ -45,7 +45,7 @@ public class KeyGenController {
     public ApiResponse<KeyGenHistoryListResponse> listHistory(
             @RequestParam(name = "key_type", required = false) String keyType,
             @RequestParam(name = "generated_by", required = false) UUID generatedBy,
-            @RequestParam(name = "organization_id", required = false) String organizationId,
+            @RequestParam(name = "organization_id", required = false) UUID organizationId,
             @RequestParam(name = "product_item_id", required = false) UUID productItemId,
             @RequestParam(name = "date_from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateFrom,
             @RequestParam(name = "date_to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant dateTo,

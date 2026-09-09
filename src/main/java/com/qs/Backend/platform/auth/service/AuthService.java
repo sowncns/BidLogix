@@ -18,6 +18,9 @@ import com.qs.Backend.platform.auth.security.TokenHasher;
 import com.qs.Backend.platform.logging.audit.service.AuditLogService;
 import com.qs.Backend.platform.permission.dto.UserPermissionInfo;
 import com.qs.Backend.platform.permission.service.PermissionService;
+import com.qs.Backend.platform.profile.entity.Profile;
+import com.qs.Backend.platform.profile.repository.ProfileRepository;
+import com.qs.Backend.platform.user.dto.EmailNotificationPrefsResponse;
 import com.qs.Backend.platform.verification.service.VerificationService;
 import com.qs.Backend.platform.auth.service.AuthInterface;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,6 +60,7 @@ public class AuthService implements AuthInterface {
     private final JwtService jwtService;
     private final PasswordPolicy passwordPolicy;
     private final PermissionService permissionService;
+    private final ProfileRepository profileRepository;
     private final VerificationService verificationService;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
@@ -346,17 +350,40 @@ public class AuthService implements AuthInterface {
 
         UserPermissionInfo info = permissionService.getUserPermissionInfo(accountId);
 
-        return new UserResponse(
-                account.getId(),
-                account.getUsername(),
-                account.getEmail(),
-                account.getPhone(),
-                account.getRegion(),
-                info.getRoles().stream().map(Role::getCode).toList(),
-                info.getPermissions().stream().map(p -> p.getCode()).toList(),
-                info.getDataScope(),
-                info.getOrganizationIds()
-        );
+        Profile profile = profileRepository.findByUserId(accountId).orElse(null);
+        String lastName = profile == null || profile.getLastName() == null ? "" : profile.getLastName();
+        String firstName = profile == null || profile.getFirstName() == null ? "" : profile.getFirstName();
+        String fullName = (lastName + " " + firstName).trim();
+
+        List<UUID> organizationIds = info.getOrganizationIds();
+        UUID organizationId = organizationIds == null || organizationIds.isEmpty() ? null : organizationIds.get(0);
+
+        return UserResponse.builder()
+                .id(account.getId())
+                .username(account.getUsername())
+                .email(account.getEmail())
+                .phone(account.getPhone())
+                .fullName(fullName)
+                .region(account.getRegion())
+                .refId(account.getRefId())
+                .active(account.isActive())
+                .createdAt(account.getCreatedAt())
+                .updatedAt(account.getUpdatedAt())
+                .roles(info.getRoles().stream()
+                        .map(r -> RoleDTO.builder().id(r.getId()).code(r.getCode()).name(r.getName())
+                                .dataScope(r.getDataScope() == null ? null : r.getDataScope().name())
+                                .build())
+                        .toList())
+                .permissions(info.getPermissions().stream()
+                        .map(p -> PermissionDTO.builder().id(p.getId()).code(p.getCode()).description(p.getDescription()).build())
+                        .toList())
+                .dataScope(info.getDataScope() == null ? null : info.getDataScope().name())
+                .organizationId(organizationId)
+                .emailNotifications(new EmailNotificationPrefsResponse(
+                        account.isEmailNotifyActivationRequest(),
+                        account.isEmailNotifyServiceRequest()
+                ))
+                .build();
     }
 
     // ---- Internal helpers ----
@@ -388,7 +415,14 @@ public class AuthService implements AuthInterface {
     private LoginResponse toLoginResponse(TokenResponse tokens) {
         String username = jwtService.extractUsername(tokens.getAccessToken());
         AuthUser account = accountRepository.findByUsername(username).orElseThrow();
-        return new LoginResponse(tokens, account.getId(), account.getUsername());
+        LoginResponse.UserSummary user = LoginResponse.UserSummary.builder()
+                .id(account.getId())
+                .username(account.getUsername())
+                .active(account.isActive())
+                .createdAt(account.getCreatedAt())
+                .updatedAt(account.getUpdatedAt())
+                .build();
+        return new LoginResponse(tokens.getAccessToken(), tokens.getRefreshToken(), user);
     }
 
     private String generateRandomToken() {

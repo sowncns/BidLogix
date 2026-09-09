@@ -45,6 +45,9 @@ services:
       - onlyoffice_data:/var/www/onlyoffice/Data
       - onlyoffice_logs:/var/log/onlyoffice
       - onlyoffice_lib:/var/lib/onlyoffice
+      
+    mem_limit: 1g
+    mem_reservation: 1g
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

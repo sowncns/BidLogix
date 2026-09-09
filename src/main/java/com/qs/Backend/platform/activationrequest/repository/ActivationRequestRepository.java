@@ -4,5 +4,7 @@ import com.qs.Backend.platform.activationrequest.entity.ActivationRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface ActivationRequestRepository extends JpaRepository<ActivationRequest, Long>, JpaSpecificationExecutor<ActivationRequest> {
+import java.util.UUID;
+
+public interface ActivationRequestRepository extends JpaRepository<ActivationRequest, UUID>, JpaSpecificationExecutor<ActivationRequest> {
 }

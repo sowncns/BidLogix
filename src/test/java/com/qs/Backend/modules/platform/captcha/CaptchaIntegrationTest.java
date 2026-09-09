@@ -18,16 +18,16 @@ class CaptchaIntegrationTest {
         CaptchaResponse response = captchaService.generate();
 
         assertNotNull(response);
-        assertNotNull(response.captchaId());
-        assertNotNull(response.imageBase64());
-        assertTrue(response.imageBase64().startsWith("data:image/png;base64,"));
+        assertNotNull(response.id());
+        assertNotNull(response.image());
+        assertTrue(response.image().startsWith("data:image/png;base64,"));
     }
 
     @Test
     void verifyWrongCaptcha_ShouldThrowException() {
         CaptchaResponse response = captchaService.generate();
 
-        AppException exception = assertThrows(AppException.class, () -> captchaService.verify(response.captchaId(), "SAI_CAPTCHA"));
+        AppException exception = assertThrows(AppException.class, () -> captchaService.verify(response.id(), "SAI_CAPTCHA"));
 
         assertEquals("INVALID_CAPTCHA", exception.getErrorCode());
     }

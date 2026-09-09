@@ -108,7 +108,7 @@ public class KeyGenService {
     }
 
     @Transactional(readOnly = true)
-    public KeyGenHistoryListResponse listHistory(String keyType, UUID generatedBy, String organizationId, UUID productItemId,
+    public KeyGenHistoryListResponse listHistory(String keyType, UUID generatedBy, UUID organizationId, UUID productItemId,
                                                  Instant dateFrom, Instant dateTo, int limit, int offset) {
         int safeLimit = Math.max(1, Math.min(limit, 200));
         int safeOffset = Math.max(0, offset);
@@ -138,7 +138,7 @@ public class KeyGenService {
     }
 
     private void saveHistory(String keyType, Map<String, Object> inputData, Map<String, Object> outputData,
-                              UUID generatedBy, String organizationId, UUID productItemId) {
+                              UUID generatedBy, UUID organizationId, UUID productItemId) {
         KeyGen history = new KeyGen();
         history.setKeyType(keyType);
         history.setInputData(writeJson(inputData));
@@ -199,13 +199,13 @@ public class KeyGenService {
         }
     }
 
-    private Specification<KeyGen> spec(String keyType, UUID generatedBy, String organizationId, UUID productItemId,
+    private Specification<KeyGen> spec(String keyType, UUID generatedBy, UUID organizationId, UUID productItemId,
                                        Instant dateFrom, Instant dateTo) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (keyType != null && !keyType.isBlank()) predicates.add(cb.equal(root.get("keyType"), keyType.trim()));
             if (generatedBy != null) predicates.add(cb.equal(root.get("generatedBy"), generatedBy));
-            if (organizationId != null && !organizationId.isBlank()) predicates.add(cb.equal(root.get("organizationId"), organizationId.trim()));
+            if (organizationId != null) predicates.add(cb.equal(root.get("organizationId"), organizationId));
             if (productItemId != null) predicates.add(cb.equal(root.get("productItemId"), productItemId));
             if (dateFrom != null) predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), dateFrom));
             if (dateTo != null) predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), dateTo));

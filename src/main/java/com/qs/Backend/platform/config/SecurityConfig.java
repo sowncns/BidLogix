@@ -61,7 +61,7 @@ public class SecurityConfig {
                                 "/auth/forgot-password", "/auth/reset-password",
                                 "/auth/customer-register", "/auth/verify",
                                 "/auth/resend-verification", "/auth/sso",
-                                "/test-config/**", "/public/**", "/actuator/**"
+                                "/test-config/**", "/public/**", "/actuator/**", "/captcha"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

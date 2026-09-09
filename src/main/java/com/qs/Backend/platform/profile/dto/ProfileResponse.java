@@ -10,7 +10,7 @@ import java.util.UUID;
 @Getter
 @Builder
 public class ProfileResponse {
-    private Long id;
+    private UUID id;
     @JsonProperty("user_id")
     private UUID userId;
     @JsonProperty("first_name")

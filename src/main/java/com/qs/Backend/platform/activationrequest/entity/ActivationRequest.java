@@ -3,19 +3,21 @@ package com.qs.Backend.platform.activationrequest.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "activation_requests")
+@Table(name = "product_item_activation_requests")
 @Getter
 @Setter
 public class ActivationRequest {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false, length = 50)
     private String requestType = "activation";
@@ -26,9 +28,10 @@ public class ActivationRequest {
     @Column(nullable = false)
     private UUID customerId;
 
-    private String organizationId;
+    private UUID organizationId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(nullable = false, columnDefinition = "jsonb")
     private String inputs;
 
     private Instant warrantyExpiry;
@@ -36,7 +39,8 @@ public class ActivationRequest {
     @Column(nullable = false, length = 50)
     private String status = "pending";
 
-    @Column(columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
     private String result;
 
     private String rejectReason;

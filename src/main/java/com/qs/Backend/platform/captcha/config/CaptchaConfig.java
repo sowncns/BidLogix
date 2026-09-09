@@ -1,12 +1,13 @@
 package com.qs.Backend.platform.captcha.config;
 
-import com.google.code.kaptcha.Producer;
-import com.google.code.kaptcha.impl.DefaultKaptcha;
-import com.google.code.kaptcha.util.Config;
+import java.util.Properties;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Properties;
+import com.google.code.kaptcha.Producer;
+import com.google.code.kaptcha.impl.DefaultKaptcha;
+import com.google.code.kaptcha.util.Config;
 
 @Configuration
 public class CaptchaConfig {
@@ -20,7 +21,7 @@ public class CaptchaConfig {
 
         properties.setProperty(
                 "kaptcha.textproducer.char.length",
-                "5"
+                "4"
         );
 
         properties.setProperty(

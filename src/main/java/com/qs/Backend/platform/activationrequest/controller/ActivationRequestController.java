@@ -33,19 +33,19 @@ public class ActivationRequestController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ActivationRequestResponse> get(@PathVariable Long id) {
+    public ApiResponse<ActivationRequestResponse> get(@PathVariable UUID id) {
         return ApiResponse.ok(activationRequestService.get(id), null);
     }
 
     @PostMapping("/{id}/approve")
-    public ApiResponse<ActivationRequestResponse> approve(@PathVariable Long id,
+    public ApiResponse<ActivationRequestResponse> approve(@PathVariable UUID id,
                                                           @AuthenticationPrincipal AccountPrincipal principal) {
         UUID reviewerId = principal == null ? null : principal.getId();
         return ApiResponse.ok(activationRequestService.approve(id, reviewerId), "Activation request approved");
     }
 
     @PostMapping("/{id}/reject")
-    public ApiResponse<ActivationRequestResponse> reject(@PathVariable Long id,
+    public ApiResponse<ActivationRequestResponse> reject(@PathVariable UUID id,
                                                          @RequestBody(required = false) ActivationRequestRejectRequest request,
                                                          @AuthenticationPrincipal AccountPrincipal principal) {
         UUID reviewerId = principal == null ? null : principal.getId();

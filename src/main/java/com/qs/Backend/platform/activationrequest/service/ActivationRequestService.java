@@ -75,12 +75,12 @@ public class ActivationRequestService {
     }
 
     @Transactional(readOnly = true)
-    public ActivationRequestResponse get(Long id) {
+    public ActivationRequestResponse get(UUID id) {
         return toResponse(findOrThrow(id));
     }
 
     @Transactional
-    public ActivationRequestResponse approve(Long id, UUID reviewerId) {
+    public ActivationRequestResponse approve(UUID id, UUID reviewerId) {
         requireUser(reviewerId);
         ActivationRequest entity = findOrThrow(id);
         ensurePending(entity);
@@ -100,7 +100,7 @@ public class ActivationRequestService {
     }
 
     @Transactional
-    public ActivationRequestResponse reject(Long id, UUID reviewerId, ActivationRequestRejectRequest request) {
+    public ActivationRequestResponse reject(UUID id, UUID reviewerId, ActivationRequestRejectRequest request) {
         requireUser(reviewerId);
         ActivationRequest entity = findOrThrow(id);
         ensurePending(entity);
@@ -122,7 +122,7 @@ public class ActivationRequestService {
         };
     }
 
-    private ActivationRequest findOrThrow(Long id) {
+    private ActivationRequest findOrThrow(UUID id) {
         return activationRequestRepository.findById(id)
                 .orElseThrow(() -> new AppException("Activation request not found", HttpStatus.NOT_FOUND, "ACTIVATION_REQUEST_NOT_FOUND"));
     }

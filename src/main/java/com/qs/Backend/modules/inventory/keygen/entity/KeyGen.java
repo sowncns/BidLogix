@@ -3,6 +3,8 @@ package com.qs.Backend.modules.inventory.keygen.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -14,22 +16,24 @@ import java.util.UUID;
 public class KeyGen {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false, length = 50)
     private String keyType;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(nullable = false, columnDefinition = "jsonb")
     private String inputData;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(nullable = false, columnDefinition = "jsonb")
     private String outputData;
 
     @Column(nullable = false)
     private UUID generatedBy;
 
-    private String organizationId;
+    private UUID organizationId;
 
     private UUID productItemId;
 

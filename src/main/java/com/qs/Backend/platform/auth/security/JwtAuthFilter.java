@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.qs.Backend.platform.auth.repository.SessionRepository;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -39,23 +40,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        String username = jwtService.extractUsername(token);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = accountDetailsService.loadUserByUsername(username);
+        try {
+            String username = jwtService.extractUsername(token);
 
-            String jti = jwtService.extractJti(token);
-            boolean sessionRevoked = jti != null && sessionRepository.findByAccessTokenJti(UUID.fromString(jti))
-                    .map(session -> session.isRevoked())
-                    .orElse(false);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = accountDetailsService.loadUserByUsername(username);
 
-            if (jwtService.isTokenValid(token, username) && !sessionRevoked) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                String jti = jwtService.extractJti(token);
+                boolean sessionRevoked = jti != null && sessionRepository.findByAccessTokenJti(UUID.fromString(jti))
+                        .map(session -> session.isRevoked())
+                        .orElse(false);
+
+                if (jwtService.isTokenValid(token, username) && !sessionRevoked) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (JwtException e) {
+            // Invalid/expired token: leave request unauthenticated so public routes
+            // still work and protected routes fall through to a 401/403 as normal.
         }
 
         filterChain.doFilter(request, response);

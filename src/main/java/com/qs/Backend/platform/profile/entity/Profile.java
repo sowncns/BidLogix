@@ -10,14 +10,14 @@ import java.util.UUID;
 // Display info split from AuthUser (auth identity) - one-to-one via userId, no FK
 // (same decoupling convention as AccountOrganization).
 @Entity
-@Table(name = "profiles")
+@Table(name = "user_profiles")
 @Getter
 @Setter
 public class Profile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "user_id", nullable = false, unique = true)
     private UUID userId;
@@ -27,8 +27,6 @@ public class Profile {
     private String lastName;
 
     private String avatarUrl;
-
-    private String region;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

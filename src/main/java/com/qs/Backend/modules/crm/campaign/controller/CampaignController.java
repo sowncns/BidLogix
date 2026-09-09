@@ -9,7 +9,9 @@ import com.qs.Backend.modules.crm.campaign.dto.PublicCampaignRegisterRequest;
 import com.qs.Backend.modules.crm.campaign.dto.PublicCampaignRegisterResponse;
 import com.qs.Backend.modules.crm.campaign.service.CampaignService;
 import com.qs.Backend.platform.auth.security.AccountPrincipal;
+import com.qs.Backend.platform.captcha.service.CaptchaService;
 import com.qs.Backend.shared.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CampaignController {
     private final CampaignService campaignService;
+    private final CaptchaService captchaService;
 
     @GetMapping("/campaigns")
     public ApiResponse<CampaignListResponse> list(@RequestParam(required = false) String status,
@@ -63,11 +66,15 @@ public class CampaignController {
         return ApiResponse.ok(campaignService.getPublic(slug), null);
     }
 
+    // Gated behind a self-hosted captcha, matching the Go backend (id/answer
+    // travel as headers, not body fields).
     @PostMapping("/public/campaigns/{slug}/register")
     public ApiResponse<PublicCampaignRegisterResponse> registerPublic(
             @PathVariable String slug,
-            @RequestBody PublicCampaignRegisterRequest request
+            @RequestBody PublicCampaignRegisterRequest request,
+            HttpServletRequest httpRequest
     ) {
+        captchaService.verify(httpRequest.getHeader("X-Captcha-Id"), httpRequest.getHeader("X-Captcha-Answer"));
         return ApiResponse.created(campaignService.registerPublic(slug, request), "Campaign registration created");
     }
 }
